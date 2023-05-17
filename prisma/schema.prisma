@@ -7,9 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//for test db connection 
 model User {
-  id     Int     @id @default(autoincrement())
-  username    String
-  password    String 
+  id String @id @default(uuid())
+  email String @unique
+  username String @unique
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  type String @default("NORMAL")
 }
