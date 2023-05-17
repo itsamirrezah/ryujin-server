@@ -10,9 +10,10 @@ export class AuthService {
   ) { }
 
   async signUp(email: string, username: string, password: string) {
-    const user = await this.userService.findOneByEmailOrUsername(email, username)
-    if (user) throw new ConflictException('User already exists')
+    const existUser = await this.userService.findOneByEmailOrUsername(email, username)
+    if (existUser) throw new ConflictException('User already exists')
     const hash = await this.hashingService.hash(password)
-    return user 
+    const createdUser = await this.userService.create({ email, username, password: hash })
+    return createdUser
   }
 }
