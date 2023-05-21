@@ -15,7 +15,7 @@ export class UsersService {
         ],
       },
     })
-    return excludeUserSensetiveKeys(user)
+    return user
   }
 
   async create(userArgs: Prisma.UserCreateInput) {

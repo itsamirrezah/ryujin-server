@@ -12,7 +12,9 @@ export class ScryptService implements HashingService {
     const hash = (await scrypt(data, salt, 32)) as Buffer
     return `${salt}.${hash.toString("hex")}`
   }
-  compare(data: string | Buffer, hash: string): Promise<boolean> {
-    throw new Error("Method not implemented.");
+  async compare(data: string | Buffer, hash: string): Promise<boolean> {
+    const [salt, password] = hash.split(".")
+    const hashFromData = (await scrypt(data, salt, 32) as Buffer).toString("hex")
+    return password === hashFromData
   }
 }
