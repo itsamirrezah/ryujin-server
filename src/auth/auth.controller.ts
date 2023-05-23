@@ -11,8 +11,14 @@ export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
   @Post('/')
-  async signUp(@Body() body: SignUpDto) {
+  async signUp(@Body() body: SignUpDto, @Req() req: Request) {
     const user = await this.authService.signUp(body.email, body.username, body.password)
+    await new Promise<void>((resolve, reject) => {
+      req.logIn(user, (err) => {
+        if (err) reject(err)
+        resolve()
+      })
+    })
     return user
   }
 
