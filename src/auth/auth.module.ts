@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { UsersModule } from 'src/users/users.module';
 import { AuthController } from './auth.controller';
+import { GoogleStrategy } from './passport/google.strategy';
 import { LocalStrategy } from './passport/local.strategy';
 import { SessionSerialize } from './passport/session.serialize';
 import { AuthService } from './service/auth.service';
@@ -14,6 +15,7 @@ import { ScryptService } from './service/scrypt.service';
   providers: [
     AuthService,
     LocalStrategy,
+    GoogleStrategy,
     SessionSerialize,
     {
       provide: HashingService,
