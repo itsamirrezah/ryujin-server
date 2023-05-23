@@ -8,6 +8,12 @@ function exclude<T, Key extends keyof T>(t: T, keys: Key[]): Omit<T, Key> {
   return t
 }
 
-export function excludeUserSensetiveKeys(user: User): Omit<User, 'password'>{
-  return exclude(user, ['password'])
+
+export interface USER_SENSETIVE_KEYS {
+  password: string,
+  googleId: string,
+}
+
+export function excludeUserSensetiveKeys(user: User): Omit<User, keyof USER_SENSETIVE_KEYS> {
+  return exclude(user, ['password', 'googleId'])
 }
