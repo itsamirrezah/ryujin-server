@@ -1,42 +1,38 @@
-import { Body, Controller, Get, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Session, UseGuards } from '@nestjs/common';
 import { AuthService } from './service/auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
 import { Request } from 'express';
-import { LocalAuth } from './passport/local.guard';
-import { SessionAuthGuard } from './session-auth.guard';
+import { AuthGuard } from './auth.guard';
+import { SignInDto } from './dto/sign-in.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
   @Post('/')
-  async signUp(@Body() body: SignUpDto, @Req() req: Request) {
+  async signUp(@Body() body: SignUpDto, @Session() session: any) {
     const user = await this.authService.signUp(body.email, body.username, body.password)
-    await new Promise<void>((resolve, reject) => {
-      req.logIn(user, (err) => {
-        if (err) reject(err)
-        resolve()
-      })
-    })
+    session.user = user
     return user
   }
 
-  @UseGuards(LocalAuth)
   @Post('/sign-in')
-  async signIn(@Req() req: Request) {
-    if (!req.user) throw new UnauthorizedException()
-    return req.user
+  async signIn(@Body() body: SignInDto, @Session() session: any) {
+    const user = await this.authService.signin(body.usernameOrEmail, body.password)
+    session.user = user
+    return user;
   }
 
   @Post('/google')
-  async signInWithGoogleToken(@Body('access') access: string) {
+  async signInWithGoogleToken(@Body('access') access: string, @Session() session: any) {
     const user = await this.authService.signInWithGoogleToken(access)
+    session.user = user
     return user
   }
 
   @Get('protected')
-  @UseGuards(SessionAuthGuard)
-  async protected(@Req() req: Request) {
-    return req.user
+  @UseGuards(AuthGuard)
+  async protected(@Session() session: any){
+    return session.user
   }
 }

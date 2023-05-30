@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { excludeUserSensetiveKeys } from 'src/common/utils';
 import { UsersService } from 'src/users/users.service';
 import { GoogleAuthService } from './google-auth.service';
@@ -18,6 +18,12 @@ export class AuthService {
     const hash = await this.hashingService.hash(password)
     const createdUser = await this.userService.create({ email, username, password: hash })
     return createdUser
+  }
+
+  async signin(emailOrUsername: string, password: string) {
+    const user = await this.validateUser(emailOrUsername, password)
+    if (!user) throw new UnauthorizedException('password or username is wrong')
+    return user
   }
 
   async validateUser(usernameOrEmail: string, password: string) {

@@ -20,7 +20,7 @@ export class GoogleAuthService {
       })
       return res.data
     } catch (e) {
-      throw new UnauthorizedException('Invalid token')
+      throw new UnauthorizedException('Invalid token: ' + token )
     }
   }
 

@@ -2,7 +2,6 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import * as session from 'express-session'
-import * as passport from 'passport';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,7 +16,6 @@ async function bootstrap() {
       maxAge: null,
     }
   }))
-  app.use(passport.session())
   await app.listen(3001);
 }
 bootstrap();
