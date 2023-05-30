@@ -6,6 +6,7 @@ import { GoogleStrategy } from './passport/google.strategy';
 import { LocalStrategy } from './passport/local.strategy';
 import { SessionSerialize } from './passport/session.serialize';
 import { AuthService } from './service/auth.service';
+import { GoogleAuthService } from './service/google-auth.service';
 import { HashingService } from './service/hashing.service';
 import { ScryptService } from './service/scrypt.service';
 
@@ -17,6 +18,7 @@ import { ScryptService } from './service/scrypt.service';
     LocalStrategy,
     GoogleStrategy,
     SessionSerialize,
+    GoogleAuthService,
     {
       provide: HashingService,
       useClass: ScryptService

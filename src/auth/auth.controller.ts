@@ -3,7 +3,6 @@ import { AuthService } from './service/auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
 import { Request } from 'express';
 import { LocalAuth } from './passport/local.guard';
-import { GoogleGuard } from './passport/google.guard';
 import { SessionAuthGuard } from './session-auth.guard';
 
 @Controller('auth')
@@ -29,16 +28,10 @@ export class AuthController {
     return req.user
   }
 
-  @UseGuards(GoogleGuard)
-  @Get('/google')
-  async signInWithGoogle() {
-    return 'Google!'
-  }
-
-  @Get('/google/redirect')
-  @UseGuards(GoogleGuard)
-  async signInWithGoogleCallback(@Req() req: Request) {
-    return req.user
+  @Post('/google')
+  async signInWithGoogleToken(@Body('access') access: string) {
+    const user = await this.authService.signInWithGoogleToken(access)
+    return user
   }
 
   @Get('protected')

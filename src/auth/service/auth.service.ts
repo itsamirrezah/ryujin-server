@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { excludeUserSensetiveKeys } from 'src/common/utils';
 import { UsersService } from 'src/users/users.service';
+import { GoogleAuthService } from './google-auth.service';
 import { HashingService } from './hashing.service';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class AuthService {
   constructor(
     private readonly userService: UsersService,
     private readonly hashingService: HashingService,
+    private readonly googleAuthService: GoogleAuthService
   ) { }
 
   async signUp(email: string, username: string, password: string) {
@@ -31,5 +33,9 @@ export class AuthService {
     if (user) return excludeUserSensetiveKeys(user);
     //FIXME: username might be taken
     return await this.userService.create({ username: email, email, googleId })
+  }
+  async signInWithGoogleToken(token: string) {
+    const { email, sub: googleId } = await this.googleAuthService.verifyByAccessToken(token)
+    return this.validateGoogleUser(email, googleId)
   }
 }
