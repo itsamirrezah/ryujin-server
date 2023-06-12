@@ -9,13 +9,17 @@ export class Room {
     this.join(playerId)
   }
 
-  join(clientId: string) {
+  join(clientId: string): Room {
     if (this.players.length >= 2) throw new Error('Room is full')
     this.players.push(clientId)
     return this;
   }
 
-  isAvailable() {
+  isAvailable(): boolean {
     return this.players.length < 2
+  }
+
+  hasUser(clientId: string): boolean {
+    return this.players.includes(clientId)
   }
 }

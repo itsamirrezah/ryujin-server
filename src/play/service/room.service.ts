@@ -15,4 +15,8 @@ export class RoomService {
   getAvailableRoom(): Room | undefined {
     return rooms.find(room => room.isAvailable())
   }
+
+  getRoomByUser(clientId: string): Room | undefined {
+    return rooms.find(room => room.hasUser(clientId))
+  }
 }

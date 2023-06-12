@@ -6,7 +6,7 @@ import { PlayService } from './service/play.service';
 
 //FIXME: add auth
 @UsePipes(new ValidationPipe())
-@WebSocketGateway({ namespace: 'play' })
+@WebSocketGateway({ namespace: 'play', cors: true })
 export class PlayGateway {
   @WebSocketServer()
   server: Server
