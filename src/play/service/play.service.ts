@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Room } from '../entity/room';
+import { GameService } from './game.service';
 import { RoomService } from './room.service';
 
 @Injectable()
 export class PlayService {
-  constructor(private readonly roomService: RoomService) { }
+  constructor(
+    private readonly roomService: RoomService,
+    private readonly gameService: GameService
+  ) { }
 
   joinRoom(clientId: string): Room {
     const userRoom = this.roomService.getRoomByUser(clientId)
@@ -15,6 +19,12 @@ export class PlayService {
       return availableRoom
     }
     return this.roomService.createRoom(clientId)
+  }
+
+  prepareGame(roomId: string, players: string[]) {
+    const game = this.gameService.getGameByRoom(roomId)
+    if (game) return game
+    return this.gameService.create(roomId, players)
   }
 
 }

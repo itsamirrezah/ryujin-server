@@ -15,8 +15,8 @@ export class Room {
     return this;
   }
 
-  isAvailable(): boolean {
-    return this.players.length < 2
+  isFull(): boolean {
+    return this.players.length === 2
   }
 
   hasUser(clientId: string): boolean {

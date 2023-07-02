@@ -13,7 +13,7 @@ export class RoomService {
     return room
   }
   getAvailableRoom(): Room | undefined {
-    return rooms.find(room => room.isAvailable())
+    return rooms.find(room => !room.isFull())
   }
 
   getRoomByUser(clientId: string): Room | undefined {
