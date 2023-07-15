@@ -27,8 +27,8 @@ export class PlayGateway {
 
   @SubscribeMessage("MOVE")
   async movePiece(@MessageBody() movePayload: MoveDto) {
-    const { roomId, playerId, from, to } = movePayload
-    const game = this.playService.movePiece(playerId, roomId, from, to)
+    const { roomId, playerId, from, to, selectedCard } = movePayload
+    const game = this.playService.movePiece(playerId, roomId, from, to, selectedCard)
     this.server.to(movePayload.roomId).emit("OPPONENT_MOVE", movePayload)
   }
 }

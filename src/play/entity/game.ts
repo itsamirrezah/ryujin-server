@@ -44,9 +44,21 @@ export class Game {
     return this
   }
 
-  move(from: SquareType, to: SquareType) {
+  subtituteWithDeck(card: Card) {
+    const turnCards = this.turnColor === "w" ? this.whiteCards : this.blackCards
+    const idx = turnCards.findIndex(c => c.name === card.name)
+    if (idx < 0) throw new Error("wrong selected card")
+    turnCards.splice(idx, 1)
+    turnCards.push(this.reserveCards[0])
+    this.reserveCards.splice(0, 1)
+    this.reserveCards.push(card)
+    return this
+  }
+
+  move(from: SquareType, to: SquareType, selectedCard: Card) {
     this.boardPosition[to] = this.boardPosition[from]
     delete this.boardPosition[from]
+    this.subtituteWithDeck(selectedCard)
     this.changeTurn()
     return this
   }

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Card } from '../consts';
 import { Room } from '../entity/room';
 import { SquareType } from '../types';
 import { GameService } from './game.service';
@@ -28,8 +29,8 @@ export class PlayService {
     return this.gameService.create(roomId, players)
   }
 
-  movePiece(player: string, roomId: string, from: SquareType, to: SquareType) {
-    return this.gameService.movePiece(roomId, from, to)
+  movePiece(player: string, roomId: string, from: SquareType, to: SquareType, selectedCard: Card) {
+    return this.gameService.movePiece(roomId, from, to, selectedCard)
   }
 }
 

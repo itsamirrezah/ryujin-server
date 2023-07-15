@@ -1,4 +1,5 @@
 import { IsString, MaxLength } from "class-validator";
+import { Card } from "../consts";
 import { SquareType } from "../types";
 
 export class MoveDto {
@@ -17,5 +18,7 @@ export class MoveDto {
   @IsString()
   @MaxLength(2)
   to: SquareType
+
+  selectedCard: Card
 }
 

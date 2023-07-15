@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Card } from '../consts';
 import { Game } from '../entity/game';
 import { SquareType } from '../types';
 
@@ -16,11 +17,11 @@ export class GameService {
     return games.find(game => game.hasRoom(roomId))
   }
 
-  movePiece(roomId: string, from: SquareType, to: SquareType) {
+  movePiece(roomId: string, from: SquareType, to: SquareType, selectedCard: Card) {
     const idx = games.findIndex(g => g.roomId === roomId)
     if (idx < 0) throw new Error("game not found")
     let game = games[idx]
-    game = game.move(from, to)
+    game = game.move(from, to, selectedCard)
     games[idx] = game
     return game
   }
