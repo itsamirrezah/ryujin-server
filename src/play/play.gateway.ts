@@ -1,7 +1,8 @@
 import { UsePipes, ValidationPipe } from '@nestjs/common';
-import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from "socket.io";
 import { CREATE_OR_JOIN_ROOM, JOIN_ROOM, START_GAME } from './consts';
+import { MoveDto } from './dto/move-dto';
 import { PlayService } from './service/play.service';
 
 //FIXME: add auth
@@ -22,5 +23,12 @@ export class PlayGateway {
       const game = this.playService.prepareGame(room.id, room.players)
       this.server.to(room.id).emit(START_GAME, game)
     }
+  }
+
+  @SubscribeMessage("MOVE")
+  async movePiece(@MessageBody() movePayload: MoveDto) {
+    const { roomId, playerId, from, to } = movePayload
+    const game = this.playService.movePiece(playerId, roomId, from, to)
+    this.server.to(movePayload.roomId).emit("OPPONENT_MOVE", movePayload)
   }
 }

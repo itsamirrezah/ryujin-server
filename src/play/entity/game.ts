@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { Card, cards, DEFAULT_POSITION } from "../consts";
-import { Position } from "../types";
+import { Position, SquareType } from "../types";
 
 export class Game {
   public id: string;
@@ -36,5 +36,18 @@ export class Game {
 
   hasRoom(roomId: string): boolean {
     return this.roomId === roomId
+  }
+
+  changeTurn() {
+    this.turnColor = this.turnColor === "w" ? "b" : "w"
+    this.turnId = this.turnId === this.whiteId ? this.blackId : this.whiteId
+    return this
+  }
+
+  move(from: SquareType, to: SquareType) {
+    this.boardPosition[to] = this.boardPosition[from]
+    delete this.boardPosition[from]
+    this.changeTurn()
+    return this
   }
 }
