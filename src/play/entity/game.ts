@@ -13,6 +13,10 @@ export class Game {
   public whiteCards = [] as Card[];
   public blackCards = [] as Card[];
   public reserveCards = [] as Card[];
+  public gameTime: number
+  public whiteRemainingTime: number
+  public blackRemainingTime: number
+  public lastTurnChangedTime: number
 
   constructor(roomId: string, players: string[]) {
     this.id = nanoid(8)
@@ -32,6 +36,10 @@ export class Game {
       allCards.splice(cIdx, 1)
     }
     this.reserveCards = allCards
+    this.gameTime = 10000
+    this.whiteRemainingTime = this.gameTime
+    this.blackRemainingTime = this.gameTime
+    this.lastTurnChangedTime = new Date().getTime()
   }
 
   hasRoom(roomId: string): boolean {
@@ -55,9 +63,19 @@ export class Game {
     return this
   }
 
+  calculateRemainingTime() {
+    const now = new Date().getTime()
+    const spendTime = now - this.lastTurnChangedTime
+    if (this.turnColor === "w") this.whiteRemainingTime -= spendTime
+    else this.blackRemainingTime -= spendTime
+    this.lastTurnChangedTime = now
+    return this
+  }
+
   move(from: SquareType, to: SquareType, selectedCard: Card) {
     this.boardPosition[to] = this.boardPosition[from]
     delete this.boardPosition[from]
+    this.calculateRemainingTime()
     this.subtituteWithDeck(selectedCard)
     this.changeTurn()
     return this

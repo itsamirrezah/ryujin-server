@@ -29,6 +29,7 @@ export class PlayGateway {
   async movePiece(@MessageBody() movePayload: MoveDto) {
     const { roomId, playerId, from, to, selectedCard } = movePayload
     const game = this.playService.movePiece(playerId, roomId, from, to, selectedCard)
-    this.server.to(movePayload.roomId).emit("OPPONENT_MOVE", movePayload)
+    this.server.to(roomId).emit("OPPONENT_MOVE", movePayload)
+    this.server.to(roomId).emit("UPDATE_TIME", { white: game.whiteRemainingTime, black: game.blackRemainingTime })
   }
 }
