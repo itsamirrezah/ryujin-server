@@ -13,17 +13,22 @@ export class GameService {
     games.push(newGame)
     return newGame
   }
-  getGameByRoom(roomId: string): Game | undefined {
-    return games.find(game => game.hasRoom(roomId))
+  getGameByRoom(roomId: string): [Game, number] | undefined {
+    const idx = games.findIndex(game => game.hasRoom(roomId))
+    if (idx < 0) return;
+    const game = games[idx]
+    return [game, idx]
   }
 
-  movePiece(roomId: string, from: SquareType, to: SquareType, selectedCard: Card) {
-    const idx = games.findIndex(g => g.roomId === roomId)
-    if (idx < 0) throw new Error("game not found")
-    let game = games[idx]
-    game = game.move(from, to, selectedCard)
-    games[idx] = game
-    return game
+  movePiece(idx: number, from: SquareType, to: SquareType, selectedCard: Card): Game {
+    const game = games[idx]
+    const updatedGame = game.movePiece(from, to)
+      .subtituteWithDeck(selectedCard)
+      .calculateRemainingTime()
+      .subtituteWithDeck(selectedCard)
+      .changeTurn()
+    games[idx] = updatedGame
+    return updatedGame
   }
 
 }

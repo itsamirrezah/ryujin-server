@@ -27,19 +27,34 @@ export class Game {
     this.blackId = this.whiteId === p1 ? p2 : p1
     this.turnId = this.turnColor === "w" ? this.whiteId : this.blackId
     this.boardPosition = DEFAULT_POSITION
-    const allCards = [...cards]
-    for (let i = 0; i < 4; i++) {
-      const cIdx = Math.floor(Math.random() * 5)
-      const card = allCards[cIdx]
-      if (this.whiteCards.length < 2) this.whiteCards.push(card)
-      else if (this.blackCards.length < 2) this.blackCards.push(card)
-      allCards.splice(cIdx, 1)
-    }
-    this.reserveCards = allCards
+    const [wCards, bCards, deck] = this.shuffleCards(cards)
+    this.whiteCards = wCards
+    this.blackCards = bCards
+    this.reserveCards = deck
     this.gameTime = 10000
     this.whiteRemainingTime = this.gameTime
     this.blackRemainingTime = this.gameTime
     this.lastTurnChangedTime = new Date().getTime()
+  }
+
+  private shuffleCards(allCards: Card[]) {
+    const deck = [...allCards]
+    const wCards: Card[] = []
+    const bCards: Card[] = []
+
+    for (let i = 0; i < 4; i++) {
+      const randomNumber = Math.random()
+      const selectedIdx = Math.floor(randomNumber * deck.length)
+      const card = deck[selectedIdx]
+      if (wCards.length < 2) wCards.push(card)
+      else if (bCards.length < 2) bCards.push(card)
+      deck.splice(selectedIdx, 1)
+    }
+    return [
+      wCards as [Card, Card],
+      bCards as [Card, Card],
+      deck.sort(() => Math.random() < 0.5 ? 1 : -1)
+    ] as const
   }
 
   hasRoom(roomId: string): boolean {
@@ -55,7 +70,6 @@ export class Game {
   subtituteWithDeck(card: Card) {
     const turnCards = this.turnColor === "w" ? this.whiteCards : this.blackCards
     const idx = turnCards.findIndex(c => c.name === card.name)
-    if (idx < 0) throw new Error("wrong selected card")
     turnCards.splice(idx, 1)
     turnCards.push(this.reserveCards[0])
     this.reserveCards.splice(0, 1)
@@ -72,12 +86,9 @@ export class Game {
     return this
   }
 
-  move(from: SquareType, to: SquareType, selectedCard: Card) {
+  movePiece(from: SquareType, to: SquareType) {
     this.boardPosition[to] = this.boardPosition[from]
     delete this.boardPosition[from]
-    this.calculateRemainingTime()
-    this.subtituteWithDeck(selectedCard)
-    this.changeTurn()
     return this
   }
 }
