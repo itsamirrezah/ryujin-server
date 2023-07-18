@@ -60,6 +60,17 @@ export class Game {
   hasRoom(roomId: string): boolean {
     return this.roomId === roomId
   }
+  squareHasPiece(square: SquareType): boolean {
+    return !!this.boardPosition[square]
+  }
+
+  playerHasCard(playerCards: Card[], card: Card) {
+    return !!playerCards.find(c => c.name === card.name)
+  }
+
+  playerHasTurn(playerId: string) {
+    return this.turnId === playerId
+  }
 
   changeTurn() {
     this.turnColor = this.turnColor === "w" ? "b" : "w"

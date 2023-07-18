@@ -30,11 +30,11 @@ export class PlayService {
     return game[0]
   }
 
-  movePiece(roomId: string, from: SquareType, to: SquareType, selectedCard: Card) {
+  movePiece(roomId: string, from: SquareType, to: SquareType, selectedCard: Card, playerId: string) {
     const game = this.gameService.getGameByRoom(roomId)
     if (!game) throw new Error("game not found")
     const [, idx] = game
-    return this.gameService.movePiece(idx, from, to, selectedCard)
+    return this.gameService.movePiece(idx, from, to, selectedCard, playerId)
   }
 }
 

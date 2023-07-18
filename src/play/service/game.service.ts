@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Card } from '../consts';
 import { Game } from '../entity/game';
+import { InvalidMoveException } from '../error';
 import { SquareType } from '../types';
 
 //FIXME: use database 
@@ -20,12 +21,15 @@ export class GameService {
     return [game, idx]
   }
 
-  movePiece(idx: number, from: SquareType, to: SquareType, selectedCard: Card): Game {
+  movePiece(idx: number, from: SquareType, to: SquareType, selectedCard: Card, playerId: string): Game {
     const game = games[idx]
+    const playerHasCard = game.playerHasCard(game.turnColor === "w" ? game.whiteCards : game.blackCards, selectedCard)
+    const invalidMove = !game.playerHasTurn(playerId) || !game.squareHasPiece(from) || !playerHasCard
+    if (invalidMove) throw new InvalidMoveException("invalid move", game)
+
     const updatedGame = game.movePiece(from, to)
       .subtituteWithDeck(selectedCard)
       .calculateRemainingTime()
-      .subtituteWithDeck(selectedCard)
       .changeTurn()
     games[idx] = updatedGame
     return updatedGame

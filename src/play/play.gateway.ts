@@ -1,8 +1,10 @@
 import { UsePipes, ValidationPipe } from '@nestjs/common';
-import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { catchError } from 'rxjs';
 import { Server, Socket } from "socket.io";
 import { CREATE_OR_JOIN_ROOM, JOIN_ROOM, START_GAME } from './consts';
 import { MoveDto } from './dto/move-dto';
+import { InvalidMoveException } from './error';
 import { PlayService } from './service/play.service';
 
 //FIXME: add auth
@@ -26,10 +28,17 @@ export class PlayGateway {
   }
 
   @SubscribeMessage("MOVE")
-  async movePiece(@MessageBody() movePayload: MoveDto) {
+  async movePiece(@MessageBody() movePayload: MoveDto, @ConnectedSocket() client: Socket) {
     const { roomId, playerId, from, to, selectedCard } = movePayload
-    const game = this.playService.movePiece(roomId, from, to, selectedCard)
-    this.server.to(roomId).emit("OPPONENT_MOVE", movePayload)
-    this.server.to(roomId).emit("UPDATE_TIME", { white: game.whiteRemainingTime, black: game.blackRemainingTime })
+    try {
+      const game = this.playService.movePiece(roomId, from, to, selectedCard, playerId)
+      this.server.to(roomId).emit("OPPONENT_MOVE", movePayload)
+      this.server.to(roomId).emit("UPDATE_TIME", { white: game.whiteRemainingTime, black: game.blackRemainingTime })
+    } catch (e) {
+      if (e instanceof InvalidMoveException) {
+        const { message, payload } = e
+        client.emit("INVALID_MOVE", { message, payload })
+      }
+    }
   }
 }
