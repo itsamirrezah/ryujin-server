@@ -1,6 +1,5 @@
 import { UsePipes, ValidationPipe } from '@nestjs/common';
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { catchError } from 'rxjs';
+import { ConnectedSocket, MessageBody, OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from "socket.io";
 import { CREATE_OR_JOIN_ROOM, JOIN_ROOM, START_GAME } from './consts';
 import { MoveDto } from './dto/move-dto';
@@ -9,12 +8,23 @@ import { PlayService } from './service/play.service';
 
 //FIXME: add auth
 @UsePipes(new ValidationPipe())
-@WebSocketGateway({ namespace: 'play', cors: true })
-export class PlayGateway {
+@WebSocketGateway({
+  namespace: 'play',
+  cors: {
+    origin: ["http://localhost:3000"],
+    credentials: true
+  }
+})
+export class PlayGateway implements OnGatewayConnection {
   @WebSocketServer()
   server: Server
 
   constructor(private readonly playService: PlayService) { }
+
+  handleConnection(client: Socket, ...args: any[]) {
+    const cookie = client.handshake.headers?.cookie
+    if (!cookie) client.disconnect()
+  }
 
   @SubscribeMessage(CREATE_OR_JOIN_ROOM)
   async createOrJoinRoom(client: Socket) {
