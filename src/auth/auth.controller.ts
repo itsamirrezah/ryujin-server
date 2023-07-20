@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Post, Req, Session, UseGuards } from '@nestjs/common';
 import { AuthService } from './service/auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
-import { Request } from 'express';
 import { AuthGuard } from './auth.guard';
 import { SignInDto } from './dto/sign-in.dto';
 
@@ -32,7 +31,7 @@ export class AuthController {
 
   @Get('protected')
   @UseGuards(AuthGuard)
-  async protected(@Session() session: any){
+  async protected(@Session() session: any) {
     return session.user
   }
 }

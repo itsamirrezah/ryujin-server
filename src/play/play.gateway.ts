@@ -1,5 +1,12 @@
 import { UsePipes, ValidationPipe } from '@nestjs/common';
-import { ConnectedSocket, MessageBody, OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  ConnectedSocket,
+  MessageBody,
+  OnGatewayConnection,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer
+} from '@nestjs/websockets';
 import { Server, Socket } from "socket.io";
 import { CREATE_OR_JOIN_ROOM, JOIN_ROOM, START_GAME } from './consts';
 import { MoveDto } from './dto/move-dto';
@@ -13,7 +20,7 @@ import { PlayService } from './service/play.service';
   cors: {
     origin: ["http://localhost:3000"],
     credentials: true
-  }
+  },
 })
 export class PlayGateway implements OnGatewayConnection {
   @WebSocketServer()
@@ -22,8 +29,10 @@ export class PlayGateway implements OnGatewayConnection {
   constructor(private readonly playService: PlayService) { }
 
   handleConnection(client: Socket, ...args: any[]) {
-    const cookie = client.handshake.headers?.cookie
-    if (!cookie) client.disconnect()
+    //FIX: non authenticated users are still able to connect to gateway in short amount of time, during which they can send events.
+    //They will be disconnected from the server eventually.
+    const user = client.request['session']['user']
+    if (!user) client.disconnect();
   }
 
   @SubscribeMessage(CREATE_OR_JOIN_ROOM)
