@@ -8,6 +8,7 @@ import {
   WebSocketServer
 } from '@nestjs/websockets';
 import { Server, Socket } from "socket.io";
+import { UsersService } from 'src/users/users.service';
 import { CREATE_OR_JOIN_ROOM, JOIN_ROOM, START_GAME } from './consts';
 import { MoveDto } from './dto/move-dto';
 import { InvalidMoveException } from './error';
@@ -26,13 +27,21 @@ export class PlayGateway implements OnGatewayConnection {
   @WebSocketServer()
   server: Server
 
-  constructor(private readonly playService: PlayService) { }
+  constructor(
+    private readonly playService: PlayService,
+    private readonly usersService: UsersService
+  ) { }
 
-  handleConnection(client: Socket, ...args: any[]) {
+  async handleConnection(client: Socket, ...args: any[]) {
     //FIX: non authenticated users are still able to connect to gateway in short amount of time, during which they can send events.
     //They will be disconnected from the server eventually.
     const user = client.request['session']['user']
-    if (!user) client.disconnect();
+    if (!user) {
+      client.disconnect();
+      return;
+    }
+    const userIsExist = await this.usersService.findOne({ id: user.id })
+    if (!userIsExist) client.disconnect()
   }
 
   @SubscribeMessage(CREATE_OR_JOIN_ROOM)
