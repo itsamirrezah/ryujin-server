@@ -8,7 +8,6 @@ function exclude<T, Key extends keyof T>(t: T, keys: Key[]): Omit<T, Key> {
   return t
 }
 
-
 export interface USER_SENSETIVE_KEYS {
   password: string,
   googleId: string,
