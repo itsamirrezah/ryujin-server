@@ -4,9 +4,11 @@ export class Room {
   public readonly players: string[] = []
   public id: string;
 
-  constructor(playerId: string) {
-    this.id = nanoid(8)
-    this.join(playerId)
+  constructor(players: string[], id?: string) {
+    if (!id) this.id = nanoid(8)
+    else this.id = id
+    if (players.length > 2) throw new Error('wrong number of players')
+    this.players = players
   }
 
   join(clientId: string): Room {

@@ -13,15 +13,8 @@ export class PlayService {
     private readonly gameService: GameService
   ) { }
 
-  joinRoom(clientId: string): Room {
-    const userRoom = this.roomService.getRoomByUser(clientId)
-    if (userRoom) return userRoom
-    const availableRoom = this.roomService.getAvailableRoom()
-    if (availableRoom) {
-      availableRoom.join(clientId)
-      return availableRoom
-    }
-    return this.roomService.createRoom(clientId)
+  async joinRoom(clientId: string): Promise<Room> {
+    return this.roomService.joinRoom(clientId)
   }
 
   prepareGame(roomId: string, players: string[]): Game {
@@ -37,4 +30,3 @@ export class PlayService {
     return this.gameService.movePiece(idx, from, to, selectedCard, playerId)
   }
 }
-

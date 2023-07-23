@@ -46,7 +46,7 @@ export class PlayGateway implements OnGatewayConnection {
 
   @SubscribeMessage(CREATE_OR_JOIN_ROOM)
   async createOrJoinRoom(client: Socket) {
-    const room = this.playService.joinRoom(client.id)
+    const room = await this.playService.joinRoom(client.id)
     await client.join(room.id)
     this.server.to(room.id).emit(JOIN_ROOM, room)
     if (room.isFull()) {

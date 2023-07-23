@@ -1,22 +1,37 @@
 import { Injectable } from '@nestjs/common';
+import { RedisService } from 'src/common/redis.service';
 import { Room } from '../entity/room';
-
-//FIXME: use database 
-const rooms = [] as Room[]
 
 @Injectable()
 export class RoomService {
 
-  createRoom(clientId: string): Room {
-    const room = new Room(clientId)
-    rooms.push(room)
-    return room
-  }
-  getAvailableRoom(): Room | undefined {
-    return rooms.find(room => !room.isFull())
+  constructor(private readonly redisService: RedisService) { }
+
+  async joinRoom(clientId: string): Promise<Room> {
+    const availableRoom = await this.getAvailableRoom()
+    if (availableRoom) {
+      const updatedRoom = availableRoom.join(clientId)
+      await this.redisService.client.set(`room:${updatedRoom.id}`, JSON.stringify(updatedRoom))
+      return updatedRoom
+    }
+    return this.createRoom(clientId)
   }
 
-  getRoomByUser(clientId: string): Room | undefined {
-    return rooms.find(room => room.hasUser(clientId))
+  async createRoom(clientId: string): Promise<Room> {
+    const room = new Room([clientId])
+    await this.redisService.client.set(`room:${room.id}`, JSON.stringify(room))
+    return room
+  }
+  async getAvailableRoom(): Promise<Room> | undefined {
+    const roomIds = await this.redisService.client.keys('room:*')
+    if (roomIds.length <= 0) return;
+
+    const stringifyRooms = await this.redisService.client.mget(...roomIds)
+
+    for (let i = 0; i < stringifyRooms.length; i++) {
+      const room = JSON.parse(stringifyRooms[i]) as { id: string, players: string[] }
+      if (room.players.length < 2) return new Room(room.players, room.id)
+    }
+    return;
   }
 }
