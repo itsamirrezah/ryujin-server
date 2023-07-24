@@ -1,37 +1,39 @@
 import { Injectable } from '@nestjs/common';
+import { RedisService } from 'src/common/redis.service';
 import { Card } from '../consts';
 import { Game } from '../entity/game';
 import { InvalidMoveException } from '../error';
 import { SquareType } from '../types';
 
-//FIXME: use database 
-const games = [] as Game[]
 
 @Injectable()
 export class GameService {
-  create(roomId: string, players: string[]): Game {
-    const newGame = new Game(roomId, players)
-    games.push(newGame)
+
+  constructor(private readonly redisService: RedisService) { }
+
+  async create(roomId: string, players: string[]): Promise<Game> {
+    const newGame = Game.createEmptyGame(roomId, players)
+    await this.redisService.client.set(`game:${newGame.roomId}:${newGame.id}`, JSON.stringify(newGame))
     return newGame
   }
-  getGameByRoom(roomId: string): [Game, number] | undefined {
-    const idx = games.findIndex(game => game.hasRoom(roomId))
-    if (idx < 0) return;
-    const game = games[idx]
-    return [game, idx]
+  async getGameByRoom(roomId: string): Promise<Game> | undefined {
+    const gameIds = await this.redisService.client.keys(`game:${roomId}:*`)
+    if (gameIds.length > 1 || gameIds.length <= 0) throw new Error("something went wrong")
+    const stringifyGame = await this.redisService.client.get(gameIds[0])
+    const parsedGame = JSON.parse(stringifyGame) as Game
+    return new Game(parsedGame)
   }
 
-  movePiece(idx: number, from: SquareType, to: SquareType, selectedCard: Card, playerId: string): Game {
-    const game = games[idx]
+  async movePiece(roomId: string, from: SquareType, to: SquareType, selectedCard: Card, playerId: string) {
+    const game = await this.getGameByRoom(roomId)
     const playerHasCard = game.playerHasCard(game.turnColor === "w" ? game.whiteCards : game.blackCards, selectedCard)
     const invalidMove = !game.playerHasTurn(playerId) || !game.squareHasPiece(from) || !playerHasCard
     if (invalidMove) throw new InvalidMoveException("invalid move", game)
-
     const updatedGame = game.movePiece(from, to)
       .subtituteWithDeck(selectedCard)
       .calculateRemainingTime()
       .changeTurn()
-    games[idx] = updatedGame
+    await this.redisService.client.set(`game:${updatedGame.roomId}:${updatedGame.id}`, JSON.stringify(updatedGame))
     return updatedGame
   }
 

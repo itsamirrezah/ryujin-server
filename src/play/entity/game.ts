@@ -18,26 +18,58 @@ export class Game {
   public blackRemainingTime: number
   public lastTurnChangedTime: number
 
-  constructor(roomId: string, players: string[]) {
-    this.id = nanoid(8)
-    this.roomId = roomId
-    this.turnColor = Math.random() > .5 ? "w" : "b"
-    const [p1, p2] = players;
-    this.whiteId = Math.random() > .5 ? p1 : p2
-    this.blackId = this.whiteId === p1 ? p2 : p1
-    this.turnId = this.turnColor === "w" ? this.whiteId : this.blackId
-    this.boardPosition = DEFAULT_POSITION
-    const [wCards, bCards, deck] = this.shuffleCards(cards)
-    this.whiteCards = wCards
-    this.blackCards = bCards
-    this.reserveCards = deck
-    this.gameTime = 10000
-    this.whiteRemainingTime = this.gameTime
-    this.blackRemainingTime = this.gameTime
-    this.lastTurnChangedTime = new Date().getTime()
+  constructor(game: Partial<Game>) {
+    this.id = game.id
+    this.roomId = game.roomId
+    this.turnColor = game.turnColor
+    this.whiteId = game.whiteId
+    this.blackId = game.blackId
+    this.turnId = game.turnId
+    this.boardPosition = game.boardPosition
+    this.whiteCards = game.whiteCards
+    this.blackCards = game.blackCards
+    this.reserveCards = game.reserveCards
+    this.gameTime = game.gameTime
+    this.whiteRemainingTime = game.whiteRemainingTime
+    this.blackRemainingTime = game.blackRemainingTime
+    this.lastTurnChangedTime = game.lastTurnChangedTime
   }
 
-  private shuffleCards(allCards: Card[]) {
+  static createEmptyGame(roomId: string, players: string[]) {
+    const id = nanoid(8)
+    const turnColor = Math.random() > .5 ? "w" : "b"
+    const [p1, p2] = players;
+    const whiteId = Math.random() > .5 ? p1 : p2
+    const blackId = whiteId === p1 ? p2 : p1
+    const turnId = turnColor === "w" ? whiteId : blackId
+    const boardPosition = DEFAULT_POSITION
+    const [wCards, bCards, deck] = this.shuffleCards(cards)
+    const whiteCards = wCards
+    const blackCards = bCards
+    const reserveCards = deck
+    const gameTime = 10000
+    const whiteRemainingTime = gameTime
+    const blackRemainingTime = gameTime
+    const lastTurnChangedTime = new Date().getTime()
+    return new Game({
+      id,
+      roomId,
+      turnColor,
+      whiteId,
+      blackId,
+      turnId,
+      boardPosition,
+      whiteCards,
+      blackCards,
+      reserveCards,
+      gameTime,
+      whiteRemainingTime,
+      blackRemainingTime,
+      lastTurnChangedTime
+    })
+  }
+
+  static shuffleCards(allCards: Card[]) {
     const deck = [...allCards]
     const wCards: Card[] = []
     const bCards: Card[] = []

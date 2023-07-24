@@ -17,16 +17,11 @@ export class PlayService {
     return this.roomService.joinRoom(clientId)
   }
 
-  prepareGame(roomId: string, players: string[]): Game {
-    const game = this.gameService.getGameByRoom(roomId)
-    if (!game) return this.gameService.create(roomId, players)
-    return game[0]
+  prepareGame(roomId: string, players: string[]): Promise<Game> {
+    return this.gameService.create(roomId, players)
   }
 
-  movePiece(roomId: string, from: SquareType, to: SquareType, selectedCard: Card, playerId: string) {
-    const game = this.gameService.getGameByRoom(roomId)
-    if (!game) throw new Error("game not found")
-    const [, idx] = game
-    return this.gameService.movePiece(idx, from, to, selectedCard, playerId)
+  async movePiece(roomId: string, from: SquareType, to: SquareType, selectedCard: Card, playerId: string) {
+    return this.gameService.movePiece(roomId, from, to, selectedCard, playerId)
   }
 }

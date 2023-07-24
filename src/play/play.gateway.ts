@@ -14,7 +14,6 @@ import { MoveDto } from './dto/move-dto';
 import { InvalidMoveException } from './error';
 import { PlayService } from './service/play.service';
 
-//FIXME: add auth
 @UsePipes(new ValidationPipe())
 @WebSocketGateway({
   namespace: 'play',
@@ -50,7 +49,7 @@ export class PlayGateway implements OnGatewayConnection {
     await client.join(room.id)
     this.server.to(room.id).emit(JOIN_ROOM, room)
     if (room.isFull()) {
-      const game = this.playService.prepareGame(room.id, room.players)
+      const game = await this.playService.prepareGame(room.id, room.players)
       this.server.to(room.id).emit(START_GAME, game)
     }
   }
@@ -59,7 +58,7 @@ export class PlayGateway implements OnGatewayConnection {
   async movePiece(@MessageBody() movePayload: MoveDto, @ConnectedSocket() client: Socket) {
     const { roomId, playerId, from, to, selectedCard } = movePayload
     try {
-      const game = this.playService.movePiece(roomId, from, to, selectedCard, playerId)
+      const game = await this.playService.movePiece(roomId, from, to, selectedCard, playerId)
       this.server.to(roomId).emit("OPPONENT_MOVE", movePayload)
       this.server.to(roomId).emit("UPDATE_TIME", { white: game.whiteRemainingTime, black: game.blackRemainingTime })
     } catch (e) {
