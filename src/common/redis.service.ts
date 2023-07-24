@@ -1,15 +1,14 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import Redis from "ioredis";
 
 @Injectable()
-export class RedisService implements OnModuleInit, OnModuleDestroy {
-  public client: Redis
+export class RedisService extends Redis implements OnModuleDestroy {
 
-  async onModuleInit() {
-    this.client = new Redis({ port: 6379, host: process.env.REDIS_HOST })
+  constructor() {
+    super({ port: 6379, host: process.env.REDIS_HOST })
   }
 
-  async onModuleDestroy() {
-    this.client.disconnect()
+  onModuleDestroy() {
+    this.disconnect()
   }
 }

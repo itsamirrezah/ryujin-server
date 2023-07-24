@@ -11,7 +11,7 @@ export class RoomService {
     const availableRoom = await this.getAvailableRoom()
     if (availableRoom) {
       const updatedRoom = availableRoom.join(clientId)
-      await this.redisService.client.set(`room:${updatedRoom.id}`, JSON.stringify(updatedRoom))
+      await this.redisService.set(`room:${updatedRoom.id}`, JSON.stringify(updatedRoom))
       return updatedRoom
     }
     return this.createRoom(clientId)
@@ -19,14 +19,14 @@ export class RoomService {
 
   async createRoom(clientId: string): Promise<Room> {
     const room = new Room([clientId])
-    await this.redisService.client.set(`room:${room.id}`, JSON.stringify(room))
+    await this.redisService.set(`room:${room.id}`, JSON.stringify(room))
     return room
   }
   async getAvailableRoom(): Promise<Room> | undefined {
-    const roomIds = await this.redisService.client.keys('room:*')
+    const roomIds = await this.redisService.keys('room:*')
     if (roomIds.length <= 0) return;
 
-    const stringifyRooms = await this.redisService.client.mget(...roomIds)
+    const stringifyRooms = await this.redisService.mget(...roomIds)
 
     for (let i = 0; i < stringifyRooms.length; i++) {
       const room = JSON.parse(stringifyRooms[i]) as { id: string, players: string[] }

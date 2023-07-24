@@ -13,13 +13,13 @@ export class GameService {
 
   async create(roomId: string, players: string[]): Promise<Game> {
     const newGame = Game.createEmptyGame(roomId, players)
-    await this.redisService.client.set(`game:${newGame.roomId}:${newGame.id}`, JSON.stringify(newGame))
+    await this.redisService.set(`game:${newGame.roomId}:${newGame.id}`, JSON.stringify(newGame))
     return newGame
   }
   async getGameByRoom(roomId: string): Promise<Game> | undefined {
-    const gameIds = await this.redisService.client.keys(`game:${roomId}:*`)
+    const gameIds = await this.redisService.keys(`game:${roomId}:*`)
     if (gameIds.length > 1 || gameIds.length <= 0) throw new Error("something went wrong")
-    const stringifyGame = await this.redisService.client.get(gameIds[0])
+    const stringifyGame = await this.redisService.get(gameIds[0])
     const parsedGame = JSON.parse(stringifyGame) as Game
     return new Game(parsedGame)
   }
@@ -33,7 +33,7 @@ export class GameService {
       .subtituteWithDeck(selectedCard)
       .calculateRemainingTime()
       .changeTurn()
-    await this.redisService.client.set(`game:${updatedGame.roomId}:${updatedGame.id}`, JSON.stringify(updatedGame))
+    await this.redisService.set(`game:${updatedGame.roomId}:${updatedGame.id}`, JSON.stringify(updatedGame))
     return updatedGame
   }
 
