@@ -1,19 +1,20 @@
 import { nanoid } from 'nanoid'
+import { Player } from '../consts';
 
 export class Room {
-  public readonly players: string[] = []
+  public readonly players: Player[] = []
   public id: string;
 
-  constructor(players: string[], id?: string) {
+  constructor(players: Player[], id?: string) {
     if (!id) this.id = nanoid(8)
     else this.id = id
     if (players.length > 2) throw new Error('wrong number of players')
     this.players = players
   }
 
-  join(clientId: string): Room {
+  join(player: Player): Room {
     if (this.players.length >= 2) throw new Error('Room is full')
-    this.players.push(clientId)
+    this.players.push(player)
     return this;
   }
 
@@ -21,7 +22,7 @@ export class Room {
     return this.players.length === 2
   }
 
-  hasUser(clientId: string): boolean {
-    return this.players.includes(clientId)
+  hasUser(playerId: string): boolean {
+    return !!this.players.find(player => player.userId === playerId)
   }
 }

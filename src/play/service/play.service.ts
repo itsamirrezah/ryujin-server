@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Card } from '../consts';
+import { Card, Player } from '../consts';
 import { Game } from '../entity/game';
 import { Room } from '../entity/room';
 import { SquareType } from '../types';
@@ -13,11 +13,11 @@ export class PlayService {
     private readonly gameService: GameService
   ) { }
 
-  async joinRoom(clientId: string): Promise<Room> {
-    return this.roomService.joinRoom(clientId)
+  async joinRoom(player: Player): Promise<Room> {
+    return this.roomService.joinRoom(player)
   }
 
-  prepareGame(roomId: string, players: string[]): Promise<Game> {
+  prepareGame(roomId: string, players: Player[]): Promise<Game> {
     return this.gameService.create(roomId, players)
   }
 

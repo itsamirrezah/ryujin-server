@@ -16,6 +16,13 @@ type Delta = {
   y: number
 }
 
+export type Player = {
+  socketId: string,
+  userId: string,
+  username: string
+}
+
+
 function getDelta(options: number[]) {
   const BOARD_WIDTH = 5
   const delta = [] as Delta[]

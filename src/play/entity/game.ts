@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Card, cards, DEFAULT_POSITION } from "../consts";
+import { Card, Player, cards, DEFAULT_POSITION } from "../consts";
 import { Position, SquareType } from "../types";
 
 export class Game {
@@ -35,12 +35,12 @@ export class Game {
     this.lastTurnChangedTime = game.lastTurnChangedTime
   }
 
-  static createEmptyGame(roomId: string, players: string[]) {
+  static createEmptyGame(roomId: string, players: Player[]) {
     const id = nanoid(8)
     const turnColor = Math.random() > .5 ? "w" : "b"
     const [p1, p2] = players;
-    const whiteId = Math.random() > .5 ? p1 : p2
-    const blackId = whiteId === p1 ? p2 : p1
+    const whiteId = Math.random() > .5 ? p1.socketId : p2.socketId
+    const blackId = whiteId === p1.socketId ? p2.socketId : p1.socketId
     const turnId = turnColor === "w" ? whiteId : blackId
     const boardPosition = DEFAULT_POSITION
     const [wCards, bCards, deck] = this.shuffleCards(cards)
