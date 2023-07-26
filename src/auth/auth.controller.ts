@@ -8,6 +8,12 @@ import { SignInDto } from './dto/sign-in.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
+  @Get('/')
+  @UseGuards(AuthGuard)
+  async current(@Session() session: any) {
+    return session.user
+  }
+
   @Post('/')
   async signUp(@Body() body: SignUpDto, @Session() session: any) {
     const user = await this.authService.signUp(body.email, body.username, body.password)
@@ -29,9 +35,4 @@ export class AuthController {
     return user
   }
 
-  @Get('protected')
-  @UseGuards(AuthGuard)
-  async protected(@Session() session: any) {
-    return session.user
-  }
 }

@@ -13,8 +13,9 @@ export function sessionMiddleware(redisClient: Redis) {
     store: new RedisStore({ client: redisClient }),
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     cookie: {
-      maxAge: null,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     }
   })
 }
