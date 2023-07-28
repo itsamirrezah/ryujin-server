@@ -1,3 +1,4 @@
+import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
 import { UsersModule } from 'src/users/users.module';
 import { AuthController } from './auth.controller';
@@ -7,7 +8,19 @@ import { HashingService } from './service/hashing.service';
 import { ScryptService } from './service/scrypt.service';
 
 @Module({
-  imports: [UsersModule],
+  imports: [
+    UsersModule,
+    MailerModule.forRoot({
+      transport: {
+        host: process.env.MAIL_HOST,
+        secure: false,
+        auth: {
+          user: process.env.MAIL_USER,
+          pass: process.env.MAIL_PASS
+        }
+      }
+    })
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,
