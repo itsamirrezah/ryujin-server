@@ -26,7 +26,11 @@ export class AuthService {
 
   async signin(emailOrUsername: string, password: string) {
     const user = await this.validateUser(emailOrUsername, password)
-    if (!user) throw new UnauthorizedException('password or username is wrong')
+    if (!user.emailConfirmed) {
+      this.sendVerificationEmail(user.id, user.email)
+      return new UnauthorizedException('email not confirmed yet')
+    }
+    if (!user) return new UnauthorizedException('password or username is wrong')
     return user
   }
 
@@ -42,7 +46,7 @@ export class AuthService {
     const user = await this.userService.findOne({ email, googleId })
     if (user) return excludeUserSensetiveKeys(user);
     //FIXME: username might be taken
-    return await this.userService.create({ username: email, email, googleId })
+    return await this.userService.create({ username: email, email, googleId, emailConfirmed: true })
   }
   async signInWithGoogleToken(token: string) {
     const { email, sub: googleId } = await this.googleAuthService.verifyByAccessToken(token)

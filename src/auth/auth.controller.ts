@@ -15,10 +15,9 @@ export class AuthController {
   }
 
   @Post('/')
-  async signUp(@Body() body: SignUpDto, @Session() session: any) {
+  async signUp(@Body() body: SignUpDto) {
     const user = await this.authService.signUp(body.email, body.username, body.password)
     await this.authService.sendVerificationEmail(user.id, user.email)
-    session.user = user
     return user
   }
 
