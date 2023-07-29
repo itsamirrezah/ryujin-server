@@ -8,12 +8,13 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  username  String   @unique
-  password  String?
-  googleId  String?  @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  type      String   @default("NORMAL")
+  id             String   @id @default(uuid())
+  email          String   @unique
+  username       String   @unique
+  password       String?
+  googleId       String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  type           String   @default("NORMAL")
+  emailConfirmed Boolean  @default(false)
 }

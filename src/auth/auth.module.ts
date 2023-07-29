@@ -1,5 +1,6 @@
 import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { UsersModule } from 'src/users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './service/auth.service';
@@ -25,6 +26,7 @@ import { ScryptService } from './service/scrypt.service';
   providers: [
     AuthService,
     GoogleAuthService,
+    JwtService,
     {
       provide: HashingService,
       useClass: ScryptService
