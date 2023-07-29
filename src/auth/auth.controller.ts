@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Session, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post, Query, Redirect, Session, UseGuards } from '@nestjs/common';
 import { AuthService } from './service/auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
 import { AuthGuard } from './auth.guard';
@@ -18,8 +18,7 @@ export class AuthController {
   async signUp(@Body() body: SignUpDto, @Session() session: any) {
     const user = await this.authService.signUp(body.email, body.username, body.password)
     await this.authService.sendVerificationEmail(user.id, user.email)
-    // update session later after confirmed mail
-    // session.user = user
+    session.user = user
     return user
   }
 
@@ -37,4 +36,16 @@ export class AuthController {
     return user
   }
 
+  @Redirect(process.env.WEB_HOST)
+  @Get('verify')
+  async verifyEmail(@Query('token') token: string, @Session() session: any) {
+    if (!token) return new BadRequestException('no token')
+    try {
+      const res = await this.authService.validateVerificationToken(token)
+      const userId = res.user.id as string
+      const user = await this.authService.confirmEmailUser(userId)
+      session.user = user
+    } catch (e) {
+    }
+  }
 }

@@ -29,4 +29,12 @@ export class UsersService {
     if (!user) throw new Error("cannot create user")
     return excludeUserSensetiveKeys(user)
   }
+
+  async updateOneById(id: string, userArgs: Prisma.UserUpdateInput) {
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: { ...userArgs }
+    })
+    return excludeUserSensetiveKeys(user)
+  }
 }

@@ -1,7 +1,6 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
 import { excludeUserSensetiveKeys } from 'src/common/utils';
 import { UsersService } from 'src/users/users.service';
 import { GoogleAuthService } from './google-auth.service';
@@ -55,7 +54,7 @@ export class AuthService {
       { user: { id: userId }, },
       {
         secret: process.env.JWT_VERIFY_SECRET,
-        expiresIn: '1m'
+        expiresIn: '15m'
       },
     )
     const verifyLink = `${process.env.HOST}/auth/verify?token=${token}`
@@ -63,7 +62,16 @@ export class AuthService {
       from: 'ryujin@ryujin.dev',
       subject: 'Verification Link',
       to: userEmail,
-      html: `<a href=${verifyLink}>verifyLink</b>`
+      html: `<p>Your Verification Link: <a href=${verifyLink}>Click Here</a></p>`
     })
+  }
+
+  async validateVerificationToken(token: string) {
+    const payload = this.jwtService.verify(token, { secret: process.env.JWT_VERIFY_SECRET })
+    return payload
+  }
+
+  async confirmEmailUser(userId: string) {
+    return this.userService.updateOneById(userId, { emailConfirmed: true })
   }
 }
