@@ -68,6 +68,18 @@ export class PlayGateway implements OnGatewayConnection {
         const { message, payload } = e
         client.emit("INVALID_MOVE", { message, payload })
       }
+      else {
+        return this.server.to(roomId).emit("END_GAME")
+      }
     }
+  }
+
+  @SubscribeMessage("PLAYER_FLAG")
+  async confirmPlayerFlag(@MessageBody() roomId: string) {
+    const game = await this.playService.isGameEndedByFlag(roomId)
+    if (game.endGame) {
+      return this.server.to(roomId).emit("END_GAME", game)
+    }
+    this.server.to(roomId).emit("UPDATE_TIME", { white: game.whiteRemainingTime, black: game.blackRemainingTime })
   }
 }

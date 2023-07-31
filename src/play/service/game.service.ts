@@ -26,6 +26,9 @@ export class GameService {
 
   async movePiece(roomId: string, from: SquareType, to: SquareType, selectedCard: Card, playerId: string) {
     const game = await this.getGameByRoom(roomId)
+    if (!!game.endGame) {
+      throw new Error("game has ended")
+    }
     const playerHasCard = game.playerHasCard(game.turnColor === "w" ? game.whiteCards : game.blackCards, selectedCard)
     const invalidMove = !game.playerHasTurn(playerId) || !game.squareHasPiece(from) || !playerHasCard
     if (invalidMove) throw new InvalidMoveException("invalid move", game)
@@ -33,6 +36,14 @@ export class GameService {
       .subtituteWithDeck(selectedCard)
       .calculateRemainingTime()
       .changeTurn()
+    await this.redisService.set(`game:${updatedGame.roomId}:${updatedGame.id}`, JSON.stringify(updatedGame))
+    return updatedGame
+  }
+
+  async isGameEndedByFlag(roomId: string) {
+    const game = await this.getGameByRoom(roomId)
+    if (!game) throw new Error("not found game")
+    const updatedGame = game.calculateRemainingTime().checkEndgameByFlag()
     await this.redisService.set(`game:${updatedGame.roomId}:${updatedGame.id}`, JSON.stringify(updatedGame))
     return updatedGame
   }

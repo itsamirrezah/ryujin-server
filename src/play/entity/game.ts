@@ -1,6 +1,15 @@
 import { nanoid } from "nanoid";
 import { Card, Player, cards, DEFAULT_POSITION } from "../consts";
-import { Position, SquareType } from "../types";
+import { PieceType, Position, SquareType } from "../types";
+
+type EndGame = {
+  result: "draw",
+  by: "insufficent material" | "agreement"
+} | ({
+  result: "won",
+  playerWon: string,
+  by: "conquer temple" | "time"
+})
 
 export class Game {
   public id: string;
@@ -17,6 +26,7 @@ export class Game {
   public whiteRemainingTime: number
   public blackRemainingTime: number
   public lastTurnChangedTime: number
+  public endGame?: EndGame
 
   constructor(game: Partial<Game>) {
     this.id = game.id
@@ -33,6 +43,7 @@ export class Game {
     this.whiteRemainingTime = game.whiteRemainingTime
     this.blackRemainingTime = game.blackRemainingTime
     this.lastTurnChangedTime = game.lastTurnChangedTime
+    this.endGame = game.endGame
   }
 
   static createEmptyGame(roomId: string, players: Player[]) {
@@ -51,6 +62,7 @@ export class Game {
     const whiteRemainingTime = gameTime
     const blackRemainingTime = gameTime
     const lastTurnChangedTime = new Date().getTime()
+
     return new Game({
       id,
       roomId,
@@ -134,4 +146,20 @@ export class Game {
     delete this.boardPosition[from]
     return this
   }
+
+  pieceExist(piece: PieceType) {
+    const d = Object.values(this.boardPosition).find(p => p === piece)
+    return d
+  }
+
+  checkEndgameByFlag() {
+    if (this.whiteRemainingTime <= 0) {
+      this.endGame = this.pieceExist("bK") ? { result: "draw", "by": "insufficent material" } : { result: "won", playerWon: this.blackId, by: "time" }
+    }
+    else if (this.blackRemainingTime <= 0) {
+      this.endGame = this.pieceExist("wK") ? { result: "draw", "by": "insufficent material" } : { result: "won", playerWon: this.whiteId, by: "time" }
+    }
+    return this
+  }
+
 }

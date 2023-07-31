@@ -24,4 +24,8 @@ export class PlayService {
   async movePiece(roomId: string, from: SquareType, to: SquareType, selectedCard: Card, playerId: string) {
     return this.gameService.movePiece(roomId, from, to, selectedCard, playerId)
   }
+
+  async isGameEndedByFlag(roomId: string) {
+    return this.gameService.isGameEndedByFlag(roomId)
+  }
 }
