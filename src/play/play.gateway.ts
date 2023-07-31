@@ -63,6 +63,9 @@ export class PlayGateway implements OnGatewayConnection {
       const game = await this.playService.movePiece(roomId, from, to, selectedCard, playerId)
       this.server.to(roomId).emit("OPPONENT_MOVE", movePayload)
       this.server.to(roomId).emit("UPDATE_TIME", { white: game.whiteRemainingTime, black: game.blackRemainingTime })
+      if (game.endGame) {
+        this.server.to(roomId).emit("END_GAME", game)
+      }
     } catch (e) {
       if (e instanceof InvalidMoveException) {
         const { message, payload } = e

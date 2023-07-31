@@ -35,6 +35,7 @@ export class GameService {
     const updatedGame = game.movePiece(from, to)
       .subtituteWithDeck(selectedCard)
       .calculateRemainingTime()
+      .checkEndgameByMove()
       .changeTurn()
     await this.redisService.set(`game:${updatedGame.roomId}:${updatedGame.id}`, JSON.stringify(updatedGame))
     return updatedGame
