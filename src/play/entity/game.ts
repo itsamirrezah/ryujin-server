@@ -1,15 +1,6 @@
 import { nanoid } from "nanoid";
-import { Card, Player, cards, DEFAULT_POSITION } from "../consts";
+import { Card, Player, cards, DEFAULT_POSITION, EndGame } from "../consts";
 import { PieceType, Position, SquareType } from "../types";
-
-type EndGame = {
-  result: "draw",
-  by: "insufficent material" | "agreement"
-} | ({
-  result: "won",
-  playerWon: string,
-  by: "conquer temple" | "time"
-})
 
 export class Game {
   public id: string;

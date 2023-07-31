@@ -23,6 +23,15 @@ export type Player = {
 }
 
 
+export type EndGame = {
+  result: "draw",
+  by: "insufficent material" | "agreement"
+} | ({
+  result: "won",
+  playerWon: string,
+  by: "conquer temple" | "time"
+})
+
 function getDelta(options: number[]) {
   const BOARD_WIDTH = 5
   const delta = [] as Delta[]
