@@ -28,13 +28,17 @@ export class PlayService {
     if (game.endGame) {
       throw new InvalidMoveException("game over", game)
     }
-    const playerHasCard = game.playerHasCard(game.turnColor === "w" ? game.whiteCards : game.blackCards, selectedCard)
-    const invalidMove = !game.playerHasTurn(playerId) || !game.squareHasPiece(from) || !playerHasCard
-    if (invalidMove) throw new InvalidMoveException("invalid move", game)
 
-    const updatedGame = game.movePiece(from, to)
+    let updatedGame = game.calculateRemainingTime().checkEndgameByFlag()
+    if (updatedGame.endGame) {
+      await this.gameService.updateGameDb(updatedGame)
+      throw new InvalidMoveException("game over", updatedGame)
+    }
+
+    if (game.isInvalidMove(playerId, selectedCard, from)) throw new InvalidMoveException("invalid move", game)
+
+    updatedGame = game.movePiece(from, to)
       .subtituteWithDeck(selectedCard)
-      .calculateRemainingTime()
       .checkEndgameByMove()
       .changeTurn()
     await this.gameService.updateGameDb(updatedGame)
@@ -44,6 +48,7 @@ export class PlayService {
   async hasGameEndedByFlag(roomId: string) {
     const game = await this.gameService.getGameByRoom(roomId)
     if (!game) throw new Error("not found game")
+    if (game.endGame) return game
     const updatedGame = game.calculateRemainingTime().checkEndgameByFlag()
     await this.gameService.updateGameDb(updatedGame)
     return updatedGame

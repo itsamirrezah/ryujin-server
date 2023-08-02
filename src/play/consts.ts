@@ -29,6 +29,7 @@ export type EndGame = {
 } | ({
   result: "won",
   playerWon: string,
+  playerWonColor: "w" | "b"
   by: "conquer temple" | "time"
 })
 

@@ -115,6 +115,7 @@ export class Game {
   }
 
   subtituteWithDeck(card: Card) {
+    if (this.endGame) return this
     const turnCards = this.turnColor === "w" ? this.whiteCards : this.blackCards
     const idx = turnCards.findIndex(c => c.name === card.name)
     turnCards.splice(idx, 1)
@@ -125,6 +126,7 @@ export class Game {
   }
 
   calculateRemainingTime() {
+    if (this.endGame) return this
     const now = new Date().getTime()
     const spendTime = now - this.lastTurnChangedTime
     if (this.turnColor === "w") this.whiteRemainingTime -= spendTime
@@ -134,36 +136,55 @@ export class Game {
   }
 
   movePiece(from: SquareType, to: SquareType) {
+    if (this.endGame) return this
     this.boardPosition[to] = this.boardPosition[from]
     delete this.boardPosition[from]
     return this
   }
 
-  pieceExist(piece: PieceType) {
+  private pieceExist(piece: PieceType) {
     return !!Object.values(this.boardPosition).find(p => p === piece)
   }
 
   checkEndgameByFlag() {
+    if (this.endGame) return this
+
     if (this.whiteRemainingTime <= 0) {
-      this.endGame = !this.pieceExist("bK") ? { result: "draw", "by": "insufficent material" } : { result: "won", playerWon: this.blackId, by: "time" }
+      this.endGame = !this.pieceExist("bK")
+        ? { result: "draw", "by": "insufficent material" }
+        : { result: "won", playerWon: this.blackId, playerWonColor: "b", by: "time" }
     }
     else if (this.blackRemainingTime <= 0) {
-      this.endGame = !this.pieceExist("wK") ? { result: "draw", "by": "insufficent material" } : { result: "won", playerWon: this.whiteId, by: "time" }
+      this.endGame = !this.pieceExist("wK")
+        ? { result: "draw", "by": "insufficent material" }
+        : { result: "won", playerWon: this.whiteId, playerWonColor: "w", by: "time" }
     }
     return this
   }
 
-  checkKingConquer(king: "wK" | "bK") {
+  private checkKingConquer(king: "wK" | "bK") {
     const temple = king[0] === "w" ? "c5" : "c1"
     if (!this.pieceExist(king)) return false
     return this.boardPosition[temple] === king
   }
 
+  private hasBothKingsRemoved() {
+    return !this.pieceExist("wK") && !this.pieceExist("bK")
+  }
+
   checkEndgameByMove() {
+    if (this.endGame) return this
     const king = `${this.turnColor}K` as "wK" | "bK"
     if (this.checkKingConquer(king)) {
-      this.endGame = { result: "won", by: "conquer temple", playerWon: this.turnId }
+      this.endGame = { result: "won", by: "conquer temple", playerWon: this.turnId, playerWonColor: this.turnColor }
+    } else if (this.hasBothKingsRemoved()) {
+      this.endGame = { result: "draw", by: "insufficent material" }
     }
     return this
+  }
+
+  isInvalidMove(playerId: string, selectedCard: Card, from: SquareType) {
+    const playerHasCard = this.playerHasCard(this.turnColor === "w" ? this.whiteCards : this.blackCards, selectedCard)
+    return !this.playerHasTurn(playerId) || !this.squareHasPiece(from) || !playerHasCard
   }
 }
