@@ -61,28 +61,25 @@ export class PlayGateway implements OnGatewayConnection {
     const { roomId, playerId, from, to, selectedCard } = movePayload
     try {
       const game = await this.playService.movePiece(roomId, from, to, selectedCard, playerId)
-      this.server.to(roomId).emit("OPPONENT_MOVE", movePayload)
-      this.server.to(roomId).emit("UPDATE_TIME", { white: game.whiteRemainingTime, black: game.blackRemainingTime })
       if (game.endGame) {
-        this.server.to(roomId).emit("END_GAME", game)
+        return this.server.to(roomId).emit("END_GAME", game)
       }
+      client.to(roomId).emit("OPPONENT_MOVE", { ...movePayload, white: game.whiteRemainingTime, black: game.blackRemainingTime })
+      client.emit('ACK_MOVE', { white: game.whiteRemainingTime, black: game.blackRemainingTime })
     } catch (e) {
       if (e instanceof InvalidMoveException) {
         const { message, payload } = e
-        client.emit("INVALID_MOVE", { message, payload })
-      }
-      else {
-        return this.server.to(roomId).emit("END_GAME")
+        client.emit("REJ_MOVE", { message, payload, time: { white: payload.whiteRemainingTime, black: payload.blackRemainingTime } })
       }
     }
   }
 
   @SubscribeMessage("PLAYER_FLAG")
-  async confirmPlayerFlag(@MessageBody() roomId: string) {
-    const game = await this.playService.isGameEndedByFlag(roomId)
+  async confirmPlayerFlag(@MessageBody() roomId: string, @ConnectedSocket() client: Socket) {
+    const game = await this.playService.hasGameEndedByFlag(roomId)
     if (game.endGame) {
       return this.server.to(roomId).emit("END_GAME", game)
     }
-    this.server.to(roomId).emit("UPDATE_TIME", { white: game.whiteRemainingTime, black: game.blackRemainingTime })
+    client.emit("REJ_FLAG", { white: game.whiteRemainingTime, black: game.blackRemainingTime })
   }
 }
