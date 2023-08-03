@@ -19,10 +19,11 @@ export class RoomService {
   }
 
   async createRoom(player: PlayerInfo): Promise<Room> {
-    const room = new Room([player])
+    const room = Room.createNewRoom(player)
     await this.redisService.set(`room:${room.id}`, JSON.stringify(room))
     return room
   }
+
   async getAvailableRoom(): Promise<Room> | undefined {
     const roomIds = await this.redisService.keys('room:*')
     if (roomIds.length <= 0) return;
@@ -30,9 +31,20 @@ export class RoomService {
     const stringifyRooms = await this.redisService.mget(...roomIds)
 
     for (let i = 0; i < stringifyRooms.length; i++) {
-      const room = JSON.parse(stringifyRooms[i]) as { id: string, players: PlayerInfo[] }
-      if (room.players.length < 2) return new Room(room.players, room.id)
+      const room = JSON.parse(stringifyRooms[i]) as Room
+      if (room.players.length < 2 && !room.isPrivate) return new Room(room)
     }
     return;
+  }
+
+  async getRoomById(roomId: string) {
+    const roomIds = await this.redisService.keys(`room:${roomId}`)
+    if (roomIds.length !== 1) throw new Error("something went wrong")
+    const stringifyRoom = await this.redisService.get(roomIds[0])
+    const parsedRoom = JSON.parse(stringifyRoom) as Room
+    return new Room(parsedRoom)
+  }
+  async updateRoomDb(room: Room) {
+    await this.redisService.set(`room:${room.id}`, JSON.stringify(room))
   }
 }

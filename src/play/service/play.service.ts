@@ -13,8 +13,18 @@ export class PlayService {
     private readonly gameService: GameService
   ) { }
 
-  async joinRoom(player: PlayerInfo): Promise<Room> {
-    return this.roomService.joinRoom(player)
+  async createPrivateRoom(player: PlayerInfo) {
+    const room = (await this.roomService.createRoom(player)).setPrivate()
+    await this.roomService.updateRoomDb(room)
+    return room
+  }
+
+  async joinRoom(player: PlayerInfo, roomId?: string): Promise<Room> {
+    if (!roomId)
+      return this.roomService.joinRoom(player)
+    const room = await this.roomService.getRoomById(roomId)
+    if (!room) throw new Error("room not found")
+    return room.join(player)
   }
 
   prepareGame(roomId: string, players: PlayerInfo[]): Promise<Game> {

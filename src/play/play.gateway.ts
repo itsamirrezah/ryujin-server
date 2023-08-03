@@ -9,7 +9,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from "socket.io";
 import { UsersService } from 'src/users/users.service';
-import { SUB_JOIN_ROOM, SUB_MOVE, SUB_FLAG, SUB_RESIGNATION } from './consts';
+import { SUB_JOIN_ROOM, SUB_MOVE, SUB_FLAG, SUB_RESIGNATION, SUB_CREATE_ROOM } from './consts';
+import { JoinRoomDto } from './dto/join-room.dto';
 import { MoveDto } from './dto/move-dto';
 import { InvalidMoveException } from './error';
 import { PlayService } from './service/play.service';
@@ -19,7 +20,7 @@ import { ServerEvents, PlayerInfo } from './types';
 @WebSocketGateway({
   namespace: 'play',
   cors: {
-    origin: ["http://localhost:3000"],
+    origin: [process.env.WEB_HOST],
     credentials: true
   },
 })
@@ -44,11 +45,20 @@ export class PlayGateway implements OnGatewayConnection {
     if (!userIsExist) client.disconnect()
   }
 
-  @SubscribeMessage(SUB_JOIN_ROOM)
-  async createOrJoinRoom(client: Socket) {
+  @SubscribeMessage(SUB_CREATE_ROOM)
+  async createRoom(client: Socket<ServerEvents>) {
     const userSess = client.request['session']['user']
     const player = { socketId: client.id, userId: userSess.id, username: userSess.username } as PlayerInfo
-    const room = await this.playService.joinRoom(player)
+    const room = await this.playService.createPrivateRoom(player)
+    await client.join(room.id)
+    client.emit("JOIN_ROOM", room)
+  }
+
+  @SubscribeMessage(SUB_JOIN_ROOM)
+  async createOrJoinRoom(@MessageBody() payload: JoinRoomDto, @ConnectedSocket() client: Socket) {
+    const userSess = client.request['session']['user']
+    const player = { socketId: client.id, userId: userSess.id, username: userSess.username } as PlayerInfo
+    const room = await this.playService.joinRoom(player, payload?.roomId)
     await client.join(room.id)
     this.server.to(room.id).emit("JOIN_ROOM", room)
     if (room.isFull()) {
