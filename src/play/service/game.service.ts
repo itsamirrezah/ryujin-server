@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from 'src/common/redis.service';
-import { Player } from '../consts';
 import { Game } from '../entity/game';
+import { PlayerInfo } from '../types';
 
 @Injectable()
 export class GameService {
 
   constructor(private readonly redisService: RedisService) { }
 
-  async create(roomId: string, players: Player[]): Promise<Game> {
+  async create(roomId: string, players: PlayerInfo[]): Promise<Game> {
     const newGame = Game.createEmptyGame(roomId, players)
     await this.redisService.set(`game:${newGame.roomId}:${newGame.id}`, JSON.stringify(newGame))
     return newGame

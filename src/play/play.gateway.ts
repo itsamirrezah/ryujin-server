@@ -9,10 +9,11 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from "socket.io";
 import { UsersService } from 'src/users/users.service';
-import { CREATE_OR_JOIN_ROOM, JOIN_ROOM, START_GAME, Player } from './consts';
+import { SUB_JOIN_ROOM, SUB_MOVE, SUB_FLAG } from './consts';
 import { MoveDto } from './dto/move-dto';
 import { InvalidMoveException } from './error';
 import { PlayService } from './service/play.service';
+import { ServerEvents, PlayerInfo } from './types';
 
 @UsePipes(new ValidationPipe())
 @WebSocketGateway({
@@ -24,7 +25,7 @@ import { PlayService } from './service/play.service';
 })
 export class PlayGateway implements OnGatewayConnection {
   @WebSocketServer()
-  server: Server
+  server: Server<ServerEvents>
 
   constructor(
     private readonly playService: PlayService,
@@ -43,43 +44,101 @@ export class PlayGateway implements OnGatewayConnection {
     if (!userIsExist) client.disconnect()
   }
 
-  @SubscribeMessage(CREATE_OR_JOIN_ROOM)
+  @SubscribeMessage(SUB_JOIN_ROOM)
   async createOrJoinRoom(client: Socket) {
     const userSess = client.request['session']['user']
-    const player = { socketId: client.id, userId: userSess.id, username: userSess.username } as Player
+    const player = { socketId: client.id, userId: userSess.id, username: userSess.username } as PlayerInfo
     const room = await this.playService.joinRoom(player)
     await client.join(room.id)
-    this.server.to(room.id).emit(JOIN_ROOM, room)
+    this.server.to(room.id).emit("JOIN_ROOM", room)
     if (room.isFull()) {
       const game = await this.playService.prepareGame(room.id, room.players)
-      this.server.to(room.id).emit(START_GAME, game)
+      this.server.to(room.id).emit(
+        "START_GAME",
+        {
+          whiteId: game.whiteId,
+          blackId: game.blackId,
+          whiteCards: game.whiteCards,
+          blackCards: game.blackCards,
+          reserveCards: game.reserveCards,
+          boardPosition: game.boardPosition,
+          turnId: game.turnId,
+          gameTime: game.gameTime
+        })
     }
   }
 
-  @SubscribeMessage("MOVE")
-  async movePiece(@MessageBody() movePayload: MoveDto, @ConnectedSocket() client: Socket) {
+  @SubscribeMessage(SUB_MOVE)
+  async movePiece(@MessageBody() movePayload: MoveDto, @ConnectedSocket() client: Socket<ServerEvents>) {
     const { roomId, playerId, from, to, selectedCard } = movePayload
     try {
       const game = await this.playService.movePiece(roomId, from, to, selectedCard, playerId)
+
       if (game.endGame) {
-        return this.server.to(roomId).emit("END_GAME", game)
+        return this.server.to(roomId).emit(
+          "END_GAME",
+          {
+            whiteId: game.whiteId,
+            blackId: game.blackId,
+            whiteCards: game.whiteCards,
+            blackCards: game.blackCards,
+            reserveCards: game.reserveCards,
+            boardPosition: game.boardPosition,
+            whiteRemaining: game.whiteRemainingTime,
+            blackRemaining: game.blackRemainingTime,
+            endGame: game.endGame
+          })
       }
-      client.to(roomId).emit("OPPONENT_MOVE", { ...movePayload, white: game.whiteRemainingTime, black: game.blackRemainingTime })
-      client.emit('ACK_MOVE', { white: game.whiteRemainingTime, black: game.blackRemainingTime })
+
+      client.to(roomId).emit(
+        "OPPONENT_MOVED",
+        {
+          from: movePayload.from,
+          to: movePayload.to,
+          selectedCard: movePayload.selectedCard,
+          whiteRemaining: game.whiteRemainingTime,
+          blackRemaining: game.blackRemainingTime
+        })
+      client.emit('ACK_MOVE', { whiteRemaining: game.whiteRemainingTime, blackRemaining: game.blackRemainingTime })
     } catch (e) {
       if (e instanceof InvalidMoveException) {
-        const { message, payload } = e
-        client.emit("REJ_MOVE", { message, payload, time: { white: payload.whiteRemainingTime, black: payload.blackRemainingTime } })
+        const { payload: game } = e
+        client.emit(
+          "REJ_MOVE",
+          {
+            whiteId: game.whiteId,
+            blackId: game.blackId,
+            whiteCards: game.whiteCards,
+            blackCards: game.blackCards,
+            reserveCards: game.reserveCards,
+            boardPosition: game.boardPosition,
+            turnId: game.turnId,
+            whiteRemaining: game.whiteRemainingTime,
+            blackRemaining: game.blackRemainingTime
+          })
       }
     }
   }
 
-  @SubscribeMessage("PLAYER_FLAG")
-  async confirmPlayerFlag(@MessageBody() roomId: string, @ConnectedSocket() client: Socket) {
+  @SubscribeMessage(SUB_FLAG)
+  async confirmPlayerFlag(@MessageBody() roomId: string, @ConnectedSocket() client: Socket<ServerEvents>) {
     const game = await this.playService.hasGameEndedByFlag(roomId)
     if (game.endGame) {
-      return this.server.to(roomId).emit("END_GAME", game)
+      return this.server.to(roomId).emit(
+        "END_GAME",
+        {
+          whiteId: game.whiteId,
+          blackId: game.blackId,
+          whiteCards: game.whiteCards,
+          blackCards: game.blackCards,
+          reserveCards: game.reserveCards,
+          boardPosition: game.boardPosition,
+          whiteRemaining: game.whiteRemainingTime,
+          blackRemaining: game.blackRemainingTime,
+          endGame: game.endGame
+        }
+      )
     }
-    client.emit("REJ_FLAG", { white: game.whiteRemainingTime, black: game.blackRemainingTime })
+    client.emit("REJ_FLAG", { whiteRemaining: game.whiteRemainingTime, blackRemaining: game.blackRemainingTime })
   }
 }

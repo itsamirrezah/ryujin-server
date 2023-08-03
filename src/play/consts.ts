@@ -1,41 +1,14 @@
-import { Position } from "./types";
+import { CardType, DeltaCard, Position } from "./types";
+
+const BOARD_WIDTH = 5
 
 export const DEFAULT_POSITION: Position = {
   a1: "wP", b1: "wP", c1: "wK", d1: "wP", e1: "wP",
   a5: "bP", b5: "bP", c5: "bK", d5: "bP", e5: "bP"
 }
 
-export type Card = {
-  name: string,
-  options: number[],
-  delta: Delta[];
-}
-
-type Delta = {
-  x: number,
-  y: number
-}
-
-export type Player = {
-  socketId: string,
-  userId: string,
-  username: string
-}
-
-
-export type EndGame = {
-  result: "draw",
-  by: "insufficent material" | "agreement"
-} | ({
-  result: "won",
-  playerWon: string,
-  playerWonColor: "w" | "b"
-  by: "conquer temple" | "time"
-})
-
 function getDelta(options: number[]) {
-  const BOARD_WIDTH = 5
-  const delta = [] as Delta[]
+  const delta = [] as DeltaCard[]
   for (let i = 0; i < options.length; i++) {
     const opt = options[i]
     const y = Math.floor(opt / BOARD_WIDTH) - 2
@@ -44,7 +17,7 @@ function getDelta(options: number[]) {
   }
   return { options, delta }
 }
-export const cards: Card[] = [
+export const cards: CardType[] = [
   { name: "tiger", ...getDelta([2, 17]) },
   { name: "cobra", ...getDelta([8, 11, 18]) },
   { name: "dragon", ...getDelta([5, 9, 16, 18]) },
@@ -63,6 +36,6 @@ export const cards: Card[] = [
   { name: "eel", ...getDelta([6, 13, 16]) },
 ]
 
-export const CREATE_OR_JOIN_ROOM = 'CREATE_OR_JOIN_ROOM';
-export const JOIN_ROOM = 'JOIN_ROOM';
-export const START_GAME = 'START_GAME'
+export const SUB_JOIN_ROOM = 'JOIN_ROOM';
+export const SUB_MOVE = 'MOVE'
+export const SUB_FLAG = 'OPPONENT_FLAG'

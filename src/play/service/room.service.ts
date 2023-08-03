@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from 'src/common/redis.service';
 import { Room } from '../entity/room';
-import { Player } from '../consts';
+import { PlayerInfo } from '../types';
 
 @Injectable()
 export class RoomService {
 
   constructor(private readonly redisService: RedisService) { }
 
-  async joinRoom(player: Player): Promise<Room> {
+  async joinRoom(player: PlayerInfo): Promise<Room> {
     const availableRoom = await this.getAvailableRoom()
     if (availableRoom) {
       const updatedRoom = availableRoom.join(player)
@@ -18,7 +18,7 @@ export class RoomService {
     return this.createRoom(player)
   }
 
-  async createRoom(player: Player): Promise<Room> {
+  async createRoom(player: PlayerInfo): Promise<Room> {
     const room = new Room([player])
     await this.redisService.set(`room:${room.id}`, JSON.stringify(room))
     return room
@@ -30,7 +30,7 @@ export class RoomService {
     const stringifyRooms = await this.redisService.mget(...roomIds)
 
     for (let i = 0; i < stringifyRooms.length; i++) {
-      const room = JSON.parse(stringifyRooms[i]) as { id: string, players: Player[] }
+      const room = JSON.parse(stringifyRooms[i]) as { id: string, players: PlayerInfo[] }
       if (room.players.length < 2) return new Room(room.players, room.id)
     }
     return;

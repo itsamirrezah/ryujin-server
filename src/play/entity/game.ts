@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
-import { Card, Player, cards, DEFAULT_POSITION, EndGame } from "../consts";
+import { cards, DEFAULT_POSITION } from "../consts";
+import { CardType, PlayerInfo, EndGame } from "../types";
 import { PieceType, Position, SquareType } from "../types";
 
 export class Game {
@@ -10,9 +11,9 @@ export class Game {
   public whiteId: string;
   public blackId: string;
   public boardPosition: Position;
-  public whiteCards = [] as Card[];
-  public blackCards = [] as Card[];
-  public reserveCards = [] as Card[];
+  public whiteCards = [] as CardType[];
+  public blackCards = [] as CardType[];
+  public reserveCards = [] as CardType[];
   public gameTime: number
   public whiteRemainingTime: number
   public blackRemainingTime: number
@@ -37,7 +38,7 @@ export class Game {
     this.endGame = game.endGame
   }
 
-  static createEmptyGame(roomId: string, players: Player[]) {
+  static createEmptyGame(roomId: string, players: PlayerInfo[]) {
     const id = nanoid(8)
     const turnColor = Math.random() > .5 ? "w" : "b"
     const [p1, p2] = players;
@@ -72,10 +73,10 @@ export class Game {
     })
   }
 
-  static shuffleCards(allCards: Card[]) {
+  static shuffleCards(allCards: CardType[]) {
     const deck = [...allCards]
-    const wCards: Card[] = []
-    const bCards: Card[] = []
+    const wCards: CardType[] = []
+    const bCards: CardType[] = []
 
     for (let i = 0; i < 4; i++) {
       const randomNumber = Math.random()
@@ -86,8 +87,8 @@ export class Game {
       deck.splice(selectedIdx, 1)
     }
     return [
-      wCards as [Card, Card],
-      bCards as [Card, Card],
+      wCards as [CardType, CardType],
+      bCards as [CardType, CardType],
       deck.sort(() => Math.random() < 0.5 ? 1 : -1)
     ] as const
   }
@@ -99,7 +100,7 @@ export class Game {
     return !!this.boardPosition[square]
   }
 
-  playerHasCard(playerCards: Card[], card: Card) {
+  playerHasCard(playerCards: CardType[], card: CardType) {
     return !!playerCards.find(c => c.name === card.name)
   }
 
@@ -114,7 +115,7 @@ export class Game {
     return this
   }
 
-  subtituteWithDeck(card: Card) {
+  subtituteWithDeck(card: CardType) {
     if (this.endGame) return this
     const turnCards = this.turnColor === "w" ? this.whiteCards : this.blackCards
     const idx = turnCards.findIndex(c => c.name === card.name)
@@ -183,7 +184,7 @@ export class Game {
     return this
   }
 
-  isInvalidMove(playerId: string, selectedCard: Card, from: SquareType) {
+  isInvalidMove(playerId: string, selectedCard: CardType, from: SquareType) {
     const playerHasCard = this.playerHasCard(this.turnColor === "w" ? this.whiteCards : this.blackCards, selectedCard)
     return !this.playerHasTurn(playerId) || !this.squareHasPiece(from) || !playerHasCard
   }
