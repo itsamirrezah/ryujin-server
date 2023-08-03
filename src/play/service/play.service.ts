@@ -52,4 +52,17 @@ export class PlayService {
     await this.gameService.updateGameDb(updatedGame)
     return updatedGame
   }
+
+  //FIXME: check if playerId is a valid player or not.
+  async playerResigned(roomId: string, playerId: string) {
+    const game = await this.gameService.getGameByRoom(roomId)
+    if (!game) throw new Error("game not found")
+    if (game.endGame) return game
+    const updatedGame = game.calculateRemainingTime()
+      .checkEndgameByFlag()
+      .resign(playerId)
+    await this.gameService.updateGameDb(updatedGame)
+    return updatedGame
+
+  }
 }

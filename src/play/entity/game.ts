@@ -188,4 +188,12 @@ export class Game {
     const playerHasCard = this.playerHasCard(this.turnColor === "w" ? this.whiteCards : this.blackCards, selectedCard)
     return !this.playerHasTurn(playerId) || !this.squareHasPiece(from) || !playerHasCard
   }
+
+  resign(playerId: string) {
+    if (this.endGame) return this
+    const winningPlayerId = this.whiteId === playerId ? this.blackId : this.whiteId
+    const winningColor = winningPlayerId === this.whiteId ? "w" : "b"
+    this.endGame = { result: "won", by: "resignation", playerWon: winningPlayerId, playerWonColor: winningColor }
+    return this
+  }
 }
