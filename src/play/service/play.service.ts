@@ -21,10 +21,13 @@ export class PlayService {
 
   async joinRoom(player: PlayerInfo, roomId?: string): Promise<Room> {
     if (!roomId)
-      return this.roomService.joinRoom(player)
+      return await this.roomService.joinRoom(player)
     const room = await this.roomService.getRoomById(roomId)
+    if (room.hasUser(player.socketId)) throw new Error("already join in room")
     if (!room) throw new Error("room not found")
-    return room.join(player)
+    const updatedRoom = room.join(player)
+    await this.roomService.updateRoomDb(updatedRoom)
+    return updatedRoom
   }
 
   prepareGame(roomId: string, players: PlayerInfo[]): Promise<Game> {

@@ -38,6 +38,6 @@ export class Room {
   }
 
   hasUser(playerId: string): boolean {
-    return !!this.players.find(player => player.userId === playerId)
+    return !!this.players.find(player => player.socketId === playerId)
   }
 }
