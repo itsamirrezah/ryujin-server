@@ -42,6 +42,7 @@ export type OpponentMovePayload = {
   from: SquareType,
   to: SquareType,
   selectedCard: CardType,
+  replacedCard: CardType,
 } & TimePayload;
 
 export type JoinRoomPayload = {
@@ -54,7 +55,6 @@ export type GamePayload = {
   blackId: string,
   whiteCards: CardType[],
   blackCards: CardType[],
-  reserveCards: CardType[],
   boardPosition: Position,
   turnId: string,
   gameTime: number
@@ -65,12 +65,16 @@ export type EndGamePayload = {
 
 export type RejMovePayload = Omit<GamePayload, "gameTime"> & TimePayload
 
+export type AckMovePayload = {
+  replacedCard: CardType
+} & TimePayload
+
 export type ServerEvents = {
   JOIN_ROOM: (payload: JoinRoomPayload) => void
   START_GAME: (payload: GamePayload) => void
   OPPONENT_MOVED: (payload: OpponentMovePayload) => void,
   END_GAME: (payload: EndGamePayload) => void
-  ACK_MOVE: (payload: TimePayload) => void
+  ACK_MOVE: (payload: AckMovePayload) => void
   REJ_MOVE: (payload: RejMovePayload) => void
   REJ_FLAG: (payload: TimePayload) => void
 }

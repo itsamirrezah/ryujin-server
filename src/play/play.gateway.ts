@@ -70,7 +70,6 @@ export class PlayGateway implements OnGatewayConnection {
           blackId: game.blackId,
           whiteCards: game.whiteCards,
           blackCards: game.blackCards,
-          reserveCards: game.reserveCards,
           boardPosition: game.boardPosition,
           turnId: game.turnId,
           gameTime: game.gameTime
@@ -92,7 +91,6 @@ export class PlayGateway implements OnGatewayConnection {
             blackId: game.blackId,
             whiteCards: game.whiteCards,
             blackCards: game.blackCards,
-            reserveCards: game.reserveCards,
             boardPosition: game.boardPosition,
             whiteRemaining: game.whiteRemainingTime,
             blackRemaining: game.blackRemainingTime,
@@ -106,10 +104,15 @@ export class PlayGateway implements OnGatewayConnection {
           from: movePayload.from,
           to: movePayload.to,
           selectedCard: movePayload.selectedCard,
+          replacedCard: game.getLastCard(playerId),
           whiteRemaining: game.whiteRemainingTime,
           blackRemaining: game.blackRemainingTime
         })
-      client.emit('ACK_MOVE', { whiteRemaining: game.whiteRemainingTime, blackRemaining: game.blackRemainingTime })
+      client.emit('ACK_MOVE', {
+        replacedCard: game.getLastCard(playerId),
+        whiteRemaining: game.whiteRemainingTime,
+        blackRemaining: game.blackRemainingTime
+      })
     } catch (e) {
       if (e instanceof InvalidMoveException) {
         const { payload: game } = e
@@ -120,7 +123,6 @@ export class PlayGateway implements OnGatewayConnection {
             blackId: game.blackId,
             whiteCards: game.whiteCards,
             blackCards: game.blackCards,
-            reserveCards: game.reserveCards,
             boardPosition: game.boardPosition,
             turnId: game.turnId,
             whiteRemaining: game.whiteRemainingTime,
@@ -141,7 +143,6 @@ export class PlayGateway implements OnGatewayConnection {
           blackId: game.blackId,
           whiteCards: game.whiteCards,
           blackCards: game.blackCards,
-          reserveCards: game.reserveCards,
           boardPosition: game.boardPosition,
           whiteRemaining: game.whiteRemainingTime,
           blackRemaining: game.blackRemainingTime,
@@ -164,7 +165,6 @@ export class PlayGateway implements OnGatewayConnection {
         blackId: game.blackId,
         whiteCards: game.whiteCards,
         blackCards: game.blackCards,
-        reserveCards: game.reserveCards,
         boardPosition: game.boardPosition,
         whiteRemaining: game.whiteRemainingTime,
         blackRemaining: game.blackRemainingTime,

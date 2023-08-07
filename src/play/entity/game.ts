@@ -196,4 +196,9 @@ export class Game {
     this.endGame = { result: "won", by: "resignation", playerWon: winningPlayerId, playerWonColor: winningColor }
     return this
   }
+
+  getLastCard(playerId: string) {
+    const cards = playerId === this.whiteId ? this.whiteCards : this.blackCards;
+    return cards[cards.length - 1]
+  }
 }
