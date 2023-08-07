@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from "socket.io";
 import { UsersService } from 'src/users/users.service';
-import { SUB_JOIN_ROOM, SUB_MOVE, SUB_FLAG, SUB_RESIGNATION, SUB_CREATE_ROOM } from './consts';
+import { SUB_JOIN_ROOM, SUB_MOVE, SUB_FLAG, SUB_RESIGNATION, SUB_CREATE_ROOM, SUB_PASS } from './consts';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { MoveDto } from './dto/move-dto';
 import { InvalidMoveException } from './error';
@@ -101,6 +101,7 @@ export class PlayGateway implements OnGatewayConnection {
       client.to(roomId).emit(
         "OPPONENT_MOVED",
         {
+          type: "move",
           from: movePayload.from,
           to: movePayload.to,
           selectedCard: movePayload.selectedCard,
@@ -112,6 +113,35 @@ export class PlayGateway implements OnGatewayConnection {
         replacedCard: game.getLastCard(playerId),
         whiteRemaining: game.whiteRemainingTime,
         blackRemaining: game.blackRemainingTime
+      })
+    } catch (e) {
+      if (e instanceof InvalidMoveException) {
+        const { payload: game } = e
+        client.emit(
+          "REJ_MOVE",
+          {
+            whiteId: game.whiteId,
+            blackId: game.blackId,
+            whiteCards: game.whiteCards,
+            blackCards: game.blackCards,
+            boardPosition: game.boardPosition,
+            turnId: game.turnId,
+            whiteRemaining: game.whiteRemainingTime,
+            blackRemaining: game.blackRemainingTime
+          })
+      }
+    }
+  }
+
+  @SubscribeMessage(SUB_PASS)
+  async passTurn(@MessageBody() payload: { roomId: string, playerId: string }, @ConnectedSocket() client: Server<ServerEvents>) {
+    const { roomId, playerId } = payload
+    try {
+      const game = await this.playService.passTurn(roomId, playerId)
+      client.to(roomId).emit("OPPONENT_MOVED", {
+        type: "pass",
+        whiteRemaining: game.whiteRemainingTime,
+        blackRemaining: game.blackRemainingTime,
       })
     } catch (e) {
       if (e instanceof InvalidMoveException) {
@@ -172,4 +202,5 @@ export class PlayGateway implements OnGatewayConnection {
       }
     )
   }
+
 }

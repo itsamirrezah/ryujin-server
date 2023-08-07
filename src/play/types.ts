@@ -38,12 +38,15 @@ export type PlayerInfo = {
 
 export type TimePayload = { whiteRemaining: number, blackRemaining: number }
 
-export type OpponentMovePayload = {
+export type OpponentMovePayload = ({
+  type: "move",
   from: SquareType,
   to: SquareType,
   selectedCard: CardType,
   replacedCard: CardType,
-} & TimePayload;
+} | {
+  type: "pass"
+}) & TimePayload;
 
 export type JoinRoomPayload = {
   id: string,

@@ -40,4 +40,5 @@ export const SUB_JOIN_ROOM = 'JOIN_ROOM';
 export const SUB_MOVE = 'MOVE'
 export const SUB_FLAG = 'OPPONENT_FLAG'
 export const SUB_RESIGNATION = 'RESIGNATION'
-export const SUB_CREATE_ROOM = 'CREATE_ROOM'
+export const SUB_CREATE_ROOM = "CREATE_ROOM"
+export const SUB_PASS = "PASS"

@@ -189,6 +189,46 @@ export class Game {
     return !this.playerHasTurn(playerId) || !this.squareHasPiece(from) || !playerHasCard
   }
 
+  private getCardOptions(
+    sourceSquare: SquareType,
+    card: CardType,
+    moveAs: "w" | "b",
+  ): SquareType[] {
+    const COLUMNS = "abcde".split("")
+    const deltaOptions = card.delta
+    const options = [] as SquareType[]
+
+    for (let i = 0; i < deltaOptions.length; i++) {
+      const delta = deltaOptions[i]
+      const currentCol = COLUMNS.findIndex(col => col === sourceSquare[0])
+      const currentRow = parseInt(sourceSquare[1])
+      const destCol = COLUMNS[currentCol + (moveAs === "w" ? delta.x : delta.x * -1)]
+      const destRow = currentRow + (moveAs === "w" ? delta.y * -1 : delta.y);
+      const outOfBound = !destCol || !destRow || destRow < 1 || destRow > 5
+      if (outOfBound) continue
+      const destSquare = destCol + destRow as SquareType
+      const piece = this.boardPosition[destSquare]
+      const friendlyFire = !!piece && piece[0] === moveAs
+      if (friendlyFire) continue
+      options.push(destSquare)
+    }
+    return options
+  }
+  isValidToPassTurn(playerId: string) {
+    const [playerCards, playerColor] = playerId === this.whiteId ? [this.whiteCards, "w"] : [this.blackCards, "b"]
+    const sourceSquares = Object.entries(this.boardPosition)
+    for (let i = 0; i < sourceSquares.length; i++) {
+      const [square, piece] = sourceSquares[i] as [SquareType, PieceType]
+      if (piece[0] !== playerColor) continue
+      for (let j = 0; j < playerCards.length; j++) {
+        const card = playerCards[j]
+        const options = this.getCardOptions(square, card, playerColor as "w" | "b")
+        if (options.length > 0) return false
+      }
+      return true
+    }
+  }
+
   resign(playerId: string) {
     if (this.endGame) return this
     const winningPlayerId = this.whiteId === playerId ? this.blackId : this.whiteId

@@ -57,6 +57,25 @@ export class PlayService {
     return updatedGame
   }
 
+  async passTurn(roomId: string, playerId: string) {
+    const game = await this.gameService.getGameByRoom(roomId)
+    if (!game) throw new Error("no game found")
+    if (game.endGame) {
+      throw new InvalidMoveException("game over", game)
+    }
+    let updatedGame = game.calculateRemainingTime().checkEndgameByFlag()
+    if (updatedGame.endGame) {
+      await this.gameService.updateGameDb(updatedGame)
+      throw new InvalidMoveException("game over", updatedGame)
+    }
+
+    if (!updatedGame.playerHasTurn(playerId) || !updatedGame.isValidToPassTurn(playerId)) throw new InvalidMoveException("cannot pass turn", updatedGame)
+
+    updatedGame = updatedGame.changeTurn()
+    await this.gameService.updateGameDb(updatedGame)
+
+    return updatedGame
+  }
   async hasGameEndedByFlag(roomId: string) {
     const game = await this.gameService.getGameByRoom(roomId)
     if (!game) throw new Error("not found game")
