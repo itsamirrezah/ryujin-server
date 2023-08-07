@@ -50,7 +50,7 @@ export class Game {
     const whiteCards = wCards
     const blackCards = bCards
     const reserveCards = deck
-    const gameTime = 10000
+    const gameTime = 100000
     const whiteRemainingTime = gameTime
     const blackRemainingTime = gameTime
     const lastTurnChangedTime = new Date().getTime()
@@ -173,13 +173,19 @@ export class Game {
     return !this.pieceExist("wK") && !this.pieceExist("bK")
   }
 
+  private hasPiecesLeft(c: "w" | "b") {
+    return this.pieceExist(`${c}K`) || this.pieceExist(`${c}P`)
+  }
   checkEndgameByMove() {
     if (this.endGame) return this
+    const opponentColor = this.turnColor === "w" ? "b" : "w"
     const king = `${this.turnColor}K` as "wK" | "bK"
     if (this.checkKingConquer(king)) {
       this.endGame = { result: "won", by: "conquer temple", playerWon: this.turnId, playerWonColor: this.turnColor }
     } else if (this.hasBothKingsRemoved()) {
       this.endGame = { result: "draw", by: "insufficent material" }
+    } else if (!this.hasPiecesLeft(opponentColor)) {
+      this.endGame = { result: "won", by: "slaughter", playerWon: this.turnId, playerWonColor: this.turnColor }
     }
     return this
   }
