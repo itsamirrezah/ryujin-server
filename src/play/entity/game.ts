@@ -96,6 +96,9 @@ export class Game {
   hasRoom(roomId: string): boolean {
     return this.roomId === roomId
   }
+  hasEndGame(): boolean {
+    return !!this.endGame
+  }
   squareHasPiece(square: SquareType): boolean {
     return !!this.boardPosition[square]
   }

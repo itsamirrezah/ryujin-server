@@ -30,8 +30,10 @@ export class PlayService {
     return updatedRoom
   }
 
-  prepareGame(roomId: string, players: PlayerInfo[]): Promise<Game> {
-    return this.gameService.create(roomId, players)
+  async prepareGame(roomId: string, players: PlayerInfo[]): Promise<Game> {
+    const updatedRoom = (await this.roomService.getRoomById(roomId)).resetRematch()
+    await this.roomService.updateRoomDb(updatedRoom)
+    return this.gameService.create(updatedRoom.id, players)
   }
 
   async movePiece(gameId: string, from: SquareType, to: SquareType, selectedCard: CardType, playerId: string) {
@@ -95,6 +97,14 @@ export class PlayService {
       .resign(playerId)
     await this.gameService.updateGameDb(updatedGame)
     return updatedGame
+  }
 
+  async requestRematch(gameId: string, playerId: string) {
+    const game = await this.gameService.getGameById(gameId)
+    if (!game.hasEndGame()) throw new Error("game is not ended")
+    const room = await this.roomService.getRoomById(game.roomId)
+    const updatedRoom = room.setRematch(playerId)
+    await this.roomService.updateRoomDb(updatedRoom)
+    return updatedRoom
   }
 }

@@ -16,7 +16,7 @@ export class GameService {
 
   async getGameByRoom(roomId: string): Promise<Game> | undefined {
     const gameIds = await this.redisService.keys(`game:${roomId}:*`)
-    if (gameIds.length > 1 || gameIds.length <= 0) throw new Error("something went wrong")
+    if (gameIds.length <= 0) throw new Error("something went wrong")
     const stringifyGame = await this.redisService.get(gameIds[0])
     const parsedGame = JSON.parse(stringifyGame) as Game
     return new Game(parsedGame)

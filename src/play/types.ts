@@ -80,5 +80,6 @@ export type ServerEvents = {
   END_GAME: (payload: EndGamePayload) => void
   ACK_MOVE: (payload: AckMovePayload) => void
   REJ_MOVE: (payload: RejMovePayload) => void
-  REJ_FLAG: (payload: TimePayload) => void
+  REJ_FLAG: (payload: TimePayload) => void,
+  OPPONENT_REMATCH: () => void
 }

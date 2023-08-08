@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from "socket.io";
 import { UsersService } from 'src/users/users.service';
-import { SUB_JOIN_ROOM, SUB_MOVE, SUB_FLAG, SUB_RESIGNATION, SUB_CREATE_ROOM, SUB_PASS } from './consts';
+import { SUB_JOIN_ROOM, SUB_MOVE, SUB_FLAG, SUB_RESIGNATION, SUB_CREATE_ROOM, SUB_PASS, SUB_REMATCH } from './consts';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { MoveDto } from './dto/move-dto';
 import { InvalidMoveException } from './error';
@@ -209,4 +209,26 @@ export class PlayGateway implements OnGatewayConnection {
     )
   }
 
+
+  @SubscribeMessage(SUB_REMATCH)
+  async rematchRequest(@MessageBody() payload: { gameId: string, playerId: string }, @ConnectedSocket() client: Socket<ServerEvents>) {
+    const { gameId, playerId } = payload
+    const room = await this.playService.requestRematch(gameId, playerId)
+    if (room.wantsRematch.length >= 2) {
+      const game = await this.playService.prepareGame(room.id, room.players)
+      return this.server.to(room.id).emit(
+        "START_GAME",
+        {
+          id: game.id,
+          whiteId: game.whiteId,
+          blackId: game.blackId,
+          whiteCards: game.whiteCards,
+          blackCards: game.blackCards,
+          boardPosition: game.boardPosition,
+          turnId: game.turnId,
+          gameTime: game.gameTime
+        })
+    }
+    client.to(room.id).emit("OPPONENT_REMATCH")
+  }
 }
