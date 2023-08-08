@@ -9,7 +9,7 @@ export class MoveDto {
 
   @IsString()
   @MaxLength(50)
-  roomId: string;
+  gameId: string;
 
   @IsString()
   @MaxLength(2)

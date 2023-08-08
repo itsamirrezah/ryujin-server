@@ -54,6 +54,7 @@ export type JoinRoomPayload = {
 }
 
 export type GamePayload = {
+  id: string,
   whiteId: string,
   blackId: string,
   whiteCards: CardType[],

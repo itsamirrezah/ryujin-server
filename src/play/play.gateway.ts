@@ -66,6 +66,7 @@ export class PlayGateway implements OnGatewayConnection {
       this.server.to(room.id).emit(
         "START_GAME",
         {
+          id: game.id,
           whiteId: game.whiteId,
           blackId: game.blackId,
           whiteCards: game.whiteCards,
@@ -79,14 +80,15 @@ export class PlayGateway implements OnGatewayConnection {
 
   @SubscribeMessage(SUB_MOVE)
   async movePiece(@MessageBody() movePayload: MoveDto, @ConnectedSocket() client: Socket<ServerEvents>) {
-    const { roomId, playerId, from, to, selectedCard } = movePayload
+    const { gameId, playerId, from, to, selectedCard } = movePayload
     try {
-      const game = await this.playService.movePiece(roomId, from, to, selectedCard, playerId)
+      const game = await this.playService.movePiece(gameId, from, to, selectedCard, playerId)
 
       if (game.endGame) {
-        return this.server.to(roomId).emit(
+        return this.server.to(game.roomId).emit(
           "END_GAME",
           {
+            id: game.id,
             whiteId: game.whiteId,
             blackId: game.blackId,
             whiteCards: game.whiteCards,
@@ -98,7 +100,7 @@ export class PlayGateway implements OnGatewayConnection {
           })
       }
 
-      client.to(roomId).emit(
+      client.to(game.roomId).emit(
         "OPPONENT_MOVED",
         {
           type: "move",
@@ -120,6 +122,7 @@ export class PlayGateway implements OnGatewayConnection {
         client.emit(
           "REJ_MOVE",
           {
+            id: game.id,
             whiteId: game.whiteId,
             blackId: game.blackId,
             whiteCards: game.whiteCards,
@@ -134,11 +137,11 @@ export class PlayGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage(SUB_PASS)
-  async passTurn(@MessageBody() payload: { roomId: string, playerId: string }, @ConnectedSocket() client: Server<ServerEvents>) {
-    const { roomId, playerId } = payload
+  async passTurn(@MessageBody() payload: { gameId: string, playerId: string }, @ConnectedSocket() client: Server<ServerEvents>) {
+    const { gameId, playerId } = payload
     try {
-      const game = await this.playService.passTurn(roomId, playerId)
-      client.to(roomId).emit("OPPONENT_MOVED", {
+      const game = await this.playService.passTurn(gameId, playerId)
+      client.to(game.roomId).emit("OPPONENT_MOVED", {
         type: "pass",
         whiteRemaining: game.whiteRemainingTime,
         blackRemaining: game.blackRemainingTime,
@@ -149,6 +152,7 @@ export class PlayGateway implements OnGatewayConnection {
         client.emit(
           "REJ_MOVE",
           {
+            id: game.id,
             whiteId: game.whiteId,
             blackId: game.blackId,
             whiteCards: game.whiteCards,
@@ -163,12 +167,13 @@ export class PlayGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage(SUB_FLAG)
-  async confirmPlayerFlag(@MessageBody() roomId: string, @ConnectedSocket() client: Socket<ServerEvents>) {
-    const game = await this.playService.hasGameEndedByFlag(roomId)
+  async confirmPlayerFlag(@MessageBody() gameId: string, @ConnectedSocket() client: Socket<ServerEvents>) {
+    const game = await this.playService.hasGameEndedByFlag(gameId)
     if (game.endGame) {
-      return this.server.to(roomId).emit(
+      return this.server.to(game.roomId).emit(
         "END_GAME",
         {
+          id: game.id,
           whiteId: game.whiteId,
           blackId: game.blackId,
           whiteCards: game.whiteCards,
@@ -184,13 +189,14 @@ export class PlayGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage(SUB_RESIGNATION)
-  async confirmPlayerResign(@MessageBody() payload: { roomId: string, playerId: string }) {
-    const { roomId, playerId } = payload
-    const game = await this.playService.playerResigned(roomId, playerId)
+  async confirmPlayerResign(@MessageBody() payload: { gameId: string, playerId: string }) {
+    const { gameId, playerId } = payload
+    const game = await this.playService.playerResigned(gameId, playerId)
     if (!game.endGame) throw new Error("error")
-    return this.server.to(roomId).emit(
+    return this.server.to(game.roomId).emit(
       "END_GAME",
       {
+        id: game.id,
         whiteId: game.whiteId,
         blackId: game.blackId,
         whiteCards: game.whiteCards,

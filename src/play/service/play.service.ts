@@ -34,8 +34,8 @@ export class PlayService {
     return this.gameService.create(roomId, players)
   }
 
-  async movePiece(roomId: string, from: SquareType, to: SquareType, selectedCard: CardType, playerId: string) {
-    const game = await this.gameService.getGameByRoom(roomId)
+  async movePiece(gameId: string, from: SquareType, to: SquareType, selectedCard: CardType, playerId: string) {
+    const game = await this.gameService.getGameById(gameId)
     if (!game) throw new Error("no game found")
     if (game.endGame) {
       throw new InvalidMoveException("game over", game)
@@ -57,8 +57,8 @@ export class PlayService {
     return updatedGame
   }
 
-  async passTurn(roomId: string, playerId: string) {
-    const game = await this.gameService.getGameByRoom(roomId)
+  async passTurn(gameId: string, playerId: string) {
+    const game = await this.gameService.getGameById(gameId)
     if (!game) throw new Error("no game found")
     if (game.endGame) {
       throw new InvalidMoveException("game over", game)
@@ -76,8 +76,8 @@ export class PlayService {
 
     return updatedGame
   }
-  async hasGameEndedByFlag(roomId: string) {
-    const game = await this.gameService.getGameByRoom(roomId)
+  async hasGameEndedByFlag(gameId: string) {
+    const game = await this.gameService.getGameById(gameId)
     if (!game) throw new Error("not found game")
     if (game.endGame) return game
     const updatedGame = game.calculateRemainingTime().checkEndgameByFlag()
@@ -86,8 +86,8 @@ export class PlayService {
   }
 
   //FIXME: check if playerId is a valid player or not.
-  async playerResigned(roomId: string, playerId: string) {
-    const game = await this.gameService.getGameByRoom(roomId)
+  async playerResigned(gameId: string, playerId: string) {
+    const game = await this.gameService.getGameById(gameId)
     if (!game) throw new Error("game not found")
     if (game.endGame) return game
     const updatedGame = game.calculateRemainingTime()

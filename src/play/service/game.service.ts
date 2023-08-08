@@ -22,6 +22,14 @@ export class GameService {
     return new Game(parsedGame)
   }
 
+  async getGameById(id: string): Promise<Game> {
+    const gameIds = await this.redisService.keys(`game:*:${id}`)
+    if (gameIds.length > 1 || gameIds.length <= 0) throw new Error("gameIds length error")
+    const stringifyGame = await this.redisService.get(gameIds[0])
+    const parsedGame = JSON.parse(stringifyGame) as Game
+    return new Game(parsedGame)
+  }
+
   async updateGameDb(game: Game) {
     await this.redisService.set(`game:${game.roomId}:${game.id}`, JSON.stringify(game))
   }
