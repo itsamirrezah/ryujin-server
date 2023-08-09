@@ -8,6 +8,7 @@ import { RoomService } from './room.service';
 
 @Injectable()
 export class PlayService {
+
   constructor(
     private readonly roomService: RoomService,
     private readonly gameService: GameService
@@ -107,4 +108,12 @@ export class PlayService {
     await this.roomService.updateRoomDb(updatedRoom)
     return updatedRoom
   }
+
+  async playerLeft(playerId: string) {
+    const game = await this.gameService.getGameByPlayer(playerId)
+    if (!game) return;
+
+    return game.playerLeft(playerId).calculateRemainingTime()
+  }
+
 }

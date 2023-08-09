@@ -33,4 +33,18 @@ export class GameService {
   async updateGameDb(game: Game) {
     await this.redisService.set(`game:${game.roomId}:${game.id}`, JSON.stringify(game))
   }
+
+  async getGameByPlayer(playerId: string) {
+    const gameIds = await this.redisService.keys(`game:*:*`)
+    if (gameIds.length === 0) return;
+
+    for (let i = 0; i < gameIds.length; i++) {
+      const stringifyGame = await this.redisService.get(gameIds[i])
+      const parsedGame = JSON.parse(stringifyGame) as Game
+      const game = new Game(parsedGame)
+      if (!game.hasEndGame() && game.hasPlayer(playerId)) return game
+    }
+    return;
+  }
+
 }

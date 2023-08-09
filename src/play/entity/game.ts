@@ -250,4 +250,17 @@ export class Game {
     const cards = playerId === this.whiteId ? this.whiteCards : this.blackCards;
     return cards[cards.length - 1]
   }
+
+  hasPlayer(playerId: string) {
+    return this.whiteId === playerId || this.blackId === playerId
+  }
+
+  playerLeft(playerId: string) {
+    if (this.hasEndGame()) return this
+    const playerWon = this.whiteId === playerId ? this.blackId : this.whiteId
+    const playerWonColor = this.whiteId === playerId ? "b" : "w"
+    this.endGame = { result: "won", by: "abandon", playerWon, playerWonColor }
+    return this
+  }
+
 }

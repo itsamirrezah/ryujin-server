@@ -3,6 +3,7 @@ import {
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer
@@ -24,7 +25,7 @@ import { ServerEvents, PlayerInfo } from './types';
     credentials: true
   },
 })
-export class PlayGateway implements OnGatewayConnection {
+export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server<ServerEvents>
 
@@ -43,6 +44,24 @@ export class PlayGateway implements OnGatewayConnection {
     }
     const userIsExist = await this.usersService.findOne({ id: user.id })
     if (!userIsExist) client.disconnect()
+  }
+
+  async handleDisconnect(client: Socket) {
+    const user = client.request['session']['user']
+    if (!user) return;
+    const game = await this.playService.playerLeft(client.id)
+    if (!game) return;
+    this.server.to(game.roomId).emit("END_GAME", {
+      id: game.id,
+      whiteId: game.whiteId,
+      blackId: game.blackId,
+      whiteCards: game.whiteCards,
+      blackCards: game.blackCards,
+      boardPosition: game.boardPosition,
+      whiteRemaining: game.whiteRemainingTime,
+      blackRemaining: game.blackRemainingTime,
+      endGame: game.endGame
+    })
   }
 
   @SubscribeMessage(SUB_CREATE_ROOM)

@@ -27,7 +27,7 @@ export type EndGame = {
   result: "won",
   playerWon: string,
   playerWonColor: "w" | "b"
-  by: "conquer temple" | "time" | "resignation" | "slaughter"
+  by: "conquer temple" | "time" | "resignation" | "slaughter" | "abandon"
 })
 
 export type PlayerInfo = {
