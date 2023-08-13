@@ -45,8 +45,7 @@ export class AuthService {
   async validateGoogleUser(email: string, googleId: string) {
     const user = await this.userService.findOne({ email, googleId })
     if (user) return excludeUserSensetiveKeys(user);
-    //FIXME: username might be taken
-    return await this.userService.create({ username: email, email, googleId, emailConfirmed: true })
+    return await this.userService.create({ email, googleId, emailConfirmed: true })
   }
   async signInWithGoogleToken(token: string) {
     const { email, sub: googleId } = await this.googleAuthService.verifyByAccessToken(token)
