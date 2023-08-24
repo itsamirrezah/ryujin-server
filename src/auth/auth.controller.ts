@@ -1,5 +1,5 @@
-import { BadRequestException, Body, ConflictException, Controller, Get, HttpCode, InternalServerErrorException, Post, Query, Redirect, Session, UseGuards } from '@nestjs/common';
-import { UserConflictError } from 'src/common/errors';
+import { BadRequestException, Body, ConflictException, Controller, ForbiddenException, Get, HttpCode, InternalServerErrorException, NotFoundException, Post, Query, Redirect, Session, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { IncorrectCredentials, UserAlreadyExistError, UserConflictError, UserNotFoundError } from 'src/common/errors';
 import { AuthGuard } from './auth.guard';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
@@ -32,9 +32,16 @@ export class AuthController {
 
   @Post('/sign-in')
   async signIn(@Body() body: SignInDto, @Session() session: any) {
-    const user = await this.authService.signin(body.usernameOrEmail, body.password)
-    session.user = user
-    return user;
+    try {
+      const user = await this.authService.signin(body.usernameOrEmail, body.password)
+      session.user = user
+      return user;
+    } catch (e: unknown) {
+      if (e instanceof UserNotFoundError) throw new NotFoundException(e.message)
+      if (e instanceof UserAlreadyExistError) throw new ForbiddenException(e.message)
+      if (e instanceof IncorrectCredentials) throw new UnauthorizedException(e.message)
+      throw new InternalServerErrorException("An unexpected error occurred")
+    }
   }
 
   @Post('/google')

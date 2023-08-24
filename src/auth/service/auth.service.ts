@@ -1,9 +1,8 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
-import { UserConflictError } from 'src/common/errors';
-import { excludeUserSensetiveKeys, UserSanitized } from 'src/common/utils';
+import { IncorrectCredentials, UserAlreadyExistError, UserConflictError, UserNotFoundError } from 'src/common/errors';
+import { UserSanitized } from 'src/common/utils';
 import { UsersService } from 'src/users/users.service';
 import { GoogleAuthService } from './google-auth.service';
 import { HashingService } from './hashing.service';
@@ -25,22 +24,12 @@ export class AuthService {
     return await this.userService.create({ email, username, password: hash })
   }
 
-  async signin(emailOrUsername: string, password: string) {
-    const user = await this.validateUser(emailOrUsername, password)
-    if (!user.emailConfirmed) {
-      this.sendEmailVerificationLink(user.id, user.email)
-      return new UnauthorizedException('email not confirmed yet')
-    }
-    if (!user) return new UnauthorizedException('password or username is wrong')
-    return user
-  }
-
-  async validateUser(usernameOrEmail: string, password: string) {
-    const user = await this.userService.findOne({ email: usernameOrEmail, username: usernameOrEmail }, false)
-    if (!user) throw new NotFoundException('User not found')
-    //FIXME: attempt to signin for a existing google account
+  async signin(emailOrUsername: string, password: string): Promise<UserSanitized> {
+    const user = await this.userService.findOne({ email: emailOrUsername, username: emailOrUsername }, false)
+    if (!user) throw new UserNotFoundError("The credential you entered is not associated with any account, if you don't have an account, please consider signing up.")
+    if (user.googleId && !user.password) throw new UserAlreadyExistError("The credentials you provided belongs to a Google-connected account. Please sign with Google to access your account.")
     const isMatch = await this.hashingService.compare(password, user.password)
-    if (!isMatch) return null
+    if (!isMatch) throw new IncorrectCredentials("The credential you provided is incorrect. Please double check and try again.")
     return user
   }
 
