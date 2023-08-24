@@ -1,8 +1,32 @@
-import { BadRequestException, Body, ConflictException, Controller, ForbiddenException, Get, HttpCode, InternalServerErrorException, NotFoundException, Post, Query, Redirect, Session, UnauthorizedException, UseGuards } from '@nestjs/common';
-import { IncorrectCredentials, UserAlreadyExistError, UserConflictError, UserNotFoundError } from 'src/common/errors';
+import {
+  Body,
+  ConflictException,
+  Controller,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  InternalServerErrorException,
+  NotFoundException,
+  Post,
+  Query,
+  Redirect,
+  Session,
+  UnauthorizedException,
+  UseGuards
+} from '@nestjs/common';
+import { TokenExpiredError } from 'jsonwebtoken';
+import {
+  IncorrectCredentials,
+  IncorrectGoogleToken,
+  UserAlreadyExistError,
+  UserConflictError,
+  UserNotFoundError
+} from 'src/common/errors';
 import { AuthGuard } from './auth.guard';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
+import { SignWithGoogleDto } from './dto/sign-with-google.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { AuthService } from './service/auth.service';
 
 @Controller('auth')
@@ -45,22 +69,26 @@ export class AuthController {
   }
 
   @Post('/google')
-  async signInWithGoogleToken(@Body('access') access: string, @Session() session: any) {
-    const user = await this.authService.signInWithGoogleToken(access)
-    session.user = user
-    return user
+  async signWithGoogle(@Body() body: SignWithGoogleDto, @Session() session: any) {
+    try {
+      const user = await this.authService.signWithGoogle(body.access)
+      session.user = user
+      return user
+    } catch (e: unknown) {
+      if (e instanceof IncorrectGoogleToken) throw new UnauthorizedException(e.message)
+      throw new InternalServerErrorException("An unexpected error occurred")
+    }
   }
 
   @Redirect(process.env.WEB_HOST)
   @Get('verify')
-  async verifyEmail(@Query('token') token: string, @Session() session: any) {
-    if (!token) return new BadRequestException('no token')
+  async verifyEmail(@Query() query: VerifyEmailDto, @Session() session: any) {
     try {
-      const res = await this.authService.validateVerificationToken(token)
-      const userId = res.user.id as string
-      const user = await this.authService.confirmEmailUser(userId)
+      const user = await this.authService.verifyUserEmail(query.token)
       session.user = user
     } catch (e) {
+      if (e instanceof TokenExpiredError) throw new UnauthorizedException("your verification link expired!")
+      throw new InternalServerErrorException("An unexpected error occurred")
     }
   }
 }

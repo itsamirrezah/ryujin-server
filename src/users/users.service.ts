@@ -31,7 +31,7 @@ export class UsersService {
     return excludeUserSensetiveKeys(user)
   }
 
-  async updateOneById(id: string, userArgs: Prisma.UserUpdateInput) {
+  async updateOneById(id: string, userArgs: Prisma.UserUpdateInput): Promise<UserSanitized> {
     const user = await this.prisma.user.update({
       where: { id },
       data: { ...userArgs }

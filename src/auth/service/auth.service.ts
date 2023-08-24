@@ -7,6 +7,10 @@ import { UsersService } from 'src/users/users.service';
 import { GoogleAuthService } from './google-auth.service';
 import { HashingService } from './hashing.service';
 
+type VerificationPayload = {
+  user: { id: string }
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -33,14 +37,11 @@ export class AuthService {
     return user
   }
 
-  async validateGoogleUser(email: string, googleId: string) {
-    const user = await this.userService.findOne({ email, googleId })
+  async signWithGoogle(token: string): Promise<UserSanitized> {
+    const { email, sub: googleId } = await this.googleAuthService.verifyAccessToken(token)
+    const user = await this.userService.findOne({ googleId })
     if (user) return user
     return await this.userService.create({ email, googleId, emailConfirmed: true })
-  }
-  async signInWithGoogleToken(token: string) {
-    const { email, sub: googleId } = await this.googleAuthService.verifyByAccessToken(token)
-    return this.validateGoogleUser(email, googleId)
   }
 
   sendEmailVerificationLink(userId: string, email: string) {
@@ -48,7 +49,7 @@ export class AuthService {
       { user: { id: userId } },
       {
         secret: process.env.JWT_VERIFY_SECRET,
-        expiresIn: '24h'
+        expiresIn: '72h'
       },
     )
     const verificationLink = `${process.env.HOST}/auth/verify?token=${token}`
@@ -60,12 +61,11 @@ export class AuthService {
     })
   }
 
-  async validateVerificationToken(token: string) {
-    const payload = this.jwtService.verify(token, { secret: process.env.JWT_VERIFY_SECRET })
-    return payload
-  }
-
-  async confirmEmailUser(userId: string) {
-    return this.userService.updateOneById(userId, { emailConfirmed: true })
+  async verifyUserEmail(token: string): Promise<UserSanitized> {
+    const payload = await this.jwtService.verifyAsync<VerificationPayload>(
+      token, { secret: process.env.JWT_VERIFY_SECRET }
+    )
+    if (!payload && !payload.user) throw new Error("token is invalid")
+    return await this.userService.updateOneById(payload.user.id, { emailConfirmed: true })
   }
 }
