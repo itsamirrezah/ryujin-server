@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaClient } from '@prisma/client';
-import { excludeUserSensetiveKeys } from 'src/common/utils';
+import { Prisma, PrismaClient, User } from '@prisma/client';
+import { excludeUserSensetiveKeys, UserSanitized } from 'src/common/utils';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaClient) { }
 
-  async findOne(userArgs: Prisma.UserWhereUniqueInput) {
+  async findOne(userArgs: Prisma.UserWhereUniqueInput, sanitize: false): Promise<User>;
+  async findOne(userArgs: Prisma.UserWhereUniqueInput, sanitize?: true): Promise<UserSanitized>;
+  async findOne(userArgs: Prisma.UserWhereUniqueInput, sanitize: boolean): Promise<User | UserSanitized> {
     const expression = Object.keys(userArgs).map(key => {
       return { [key]: userArgs[key] }
     })
@@ -14,15 +16,14 @@ export class UsersService {
 
     const user = await this.prisma.user.findFirst({
       where: {
-        OR: [
-          ...expression,
-        ],
+        OR: [...expression,],
       },
     })
+    if (sanitize) return excludeUserSensetiveKeys(user)
     return user
   }
 
-  async create(userArgs: Prisma.UserCreateInput) {
+  async create(userArgs: Prisma.UserCreateInput): Promise<UserSanitized> {
     const user = await this.prisma.user.create({
       data: { ...userArgs },
     })

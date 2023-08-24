@@ -1,7 +1,9 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { excludeUserSensetiveKeys } from 'src/common/utils';
+import { User } from '@prisma/client';
+import { UserConflictError } from 'src/common/errors';
+import { excludeUserSensetiveKeys, UserSanitized } from 'src/common/utils';
 import { UsersService } from 'src/users/users.service';
 import { GoogleAuthService } from './google-auth.service';
 import { HashingService } from './hashing.service';
@@ -16,18 +18,17 @@ export class AuthService {
     private readonly jwtService: JwtService
   ) { }
 
-  async signUp(email: string, username: string, password: string) {
+  async signUp(email: string, username: string, password: string): Promise<UserSanitized> {
     const existUser = await this.userService.findOne({ email, username })
-    if (existUser) throw new ConflictException('User already exists')
+    if (existUser) throw new UserConflictError("The provided email or username is already taken. Please choose a different one.")
     const hash = await this.hashingService.hash(password)
-    const createdUser = await this.userService.create({ email, username, password: hash })
-    return createdUser
+    return await this.userService.create({ email, username, password: hash })
   }
 
   async signin(emailOrUsername: string, password: string) {
     const user = await this.validateUser(emailOrUsername, password)
     if (!user.emailConfirmed) {
-      this.sendVerificationEmail(user.id, user.email)
+      this.sendEmailVerificationLink(user.id, user.email)
       return new UnauthorizedException('email not confirmed yet')
     }
     if (!user) return new UnauthorizedException('password or username is wrong')
@@ -35,16 +36,17 @@ export class AuthService {
   }
 
   async validateUser(usernameOrEmail: string, password: string) {
-    const user = await this.userService.findOne({ email: usernameOrEmail, username: usernameOrEmail })
+    const user = await this.userService.findOne({ email: usernameOrEmail, username: usernameOrEmail }, false)
     if (!user) throw new NotFoundException('User not found')
+    //FIXME: attempt to signin for a existing google account
     const isMatch = await this.hashingService.compare(password, user.password)
     if (!isMatch) return null
-    return excludeUserSensetiveKeys(user)
+    return user
   }
 
   async validateGoogleUser(email: string, googleId: string) {
     const user = await this.userService.findOne({ email, googleId })
-    if (user) return excludeUserSensetiveKeys(user);
+    if (user) return user
     return await this.userService.create({ email, googleId, emailConfirmed: true })
   }
   async signInWithGoogleToken(token: string) {
@@ -52,20 +54,20 @@ export class AuthService {
     return this.validateGoogleUser(email, googleId)
   }
 
-  async sendVerificationEmail(userId: string, userEmail: string) {
+  sendEmailVerificationLink(userId: string, email: string) {
     const token = this.jwtService.sign(
-      { user: { id: userId }, },
+      { user: { id: userId } },
       {
         secret: process.env.JWT_VERIFY_SECRET,
-        expiresIn: '15m'
+        expiresIn: '24h'
       },
     )
-    const verifyLink = `${process.env.HOST}/auth/verify?token=${token}`
-    await this.mailService.sendMail({
+    const verificationLink = `${process.env.HOST}/auth/verify?token=${token}`
+    this.mailService.sendMail({
       from: 'ryujin@ryujin.dev',
-      subject: 'Verification Link',
-      to: userEmail,
-      html: `<p>Your Verification Link: <a href=${verifyLink}>Click Here</a></p>`
+      subject: 'Please Confirm Your Email Address',
+      to: email,
+      html: `<p>Your Verification Link: <a href=${verificationLink}>Click Here</a></p>`
     })
   }
 

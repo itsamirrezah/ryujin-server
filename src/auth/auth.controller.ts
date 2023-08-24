@@ -1,8 +1,9 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query, Redirect, Session, UseGuards } from '@nestjs/common';
-import { AuthService } from './service/auth.service';
-import { SignUpDto } from './dto/sign-up.dto';
+import { BadRequestException, Body, ConflictException, Controller, Get, HttpCode, InternalServerErrorException, Post, Query, Redirect, Session, UseGuards } from '@nestjs/common';
+import { UserConflictError } from 'src/common/errors';
 import { AuthGuard } from './auth.guard';
 import { SignInDto } from './dto/sign-in.dto';
+import { SignUpDto } from './dto/sign-up.dto';
+import { AuthService } from './service/auth.service';
 
 @Controller('auth')
 export class AuthController {
@@ -14,11 +15,19 @@ export class AuthController {
     return session.user
   }
 
+  @HttpCode(201)
   @Post('/')
-  async signUp(@Body() body: SignUpDto) {
-    const user = await this.authService.signUp(body.email, body.username, body.password)
-    await this.authService.sendVerificationEmail(user.id, user.email)
-    return user
+  async signUp(@Body() body: SignUpDto, @Session() session: any) {
+    const { email, username, password } = body
+    try {
+      const user = await this.authService.signUp(email, username, password)
+      this.authService.sendEmailVerificationLink(user.id, user.email)
+      session.user = user
+      return user
+    } catch (e: unknown) {
+      if (e instanceof UserConflictError) throw new ConflictException(e.message)
+      throw new InternalServerErrorException("An unexpected error occurred")
+    }
   }
 
   @Post('/sign-in')
