@@ -7,6 +7,22 @@ import { RedisService } from './common/redis.service';
 import { Redis } from 'ioredis';
 import RedisStore from 'connect-redis';
 
+type UserSession = {
+  id: string,
+  email: string,
+  username?: string,
+  createdAt: Date,
+  updatedAt: Date,
+  emailConfirmed: boolean
+  type: string
+}
+
+declare module 'express-session' {
+  interface SessionData {
+    user: UserSession;
+  }
+}
+
 export function sessionMiddleware(redisClient: Redis) {
   return session({
     secret: process.env.SESSION_SECRET,

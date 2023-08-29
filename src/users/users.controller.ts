@@ -10,6 +10,7 @@ import {
   Session,
   UseGuards
 } from "@nestjs/common";
+import { SessionData } from "express-session";
 import { AuthGuard } from "src/auth/auth.guard";
 import { IdParam } from "./dto/id.param";
 import { UsernameDto } from "./dto/username.dto";
@@ -30,7 +31,7 @@ export class UsersController {
   //FIXME: global authorization
   @Put(':id/username')
   @UseGuards(AuthGuard)
-  async upadteOne(@Param() param: IdParam, @Body() body: UsernameDto, @Session() session: any) {
+  async upadteOne(@Param() param: IdParam, @Body() body: UsernameDto, @Session() session: SessionData) {
     const { id } = param
     const { username } = body
     if (session?.user?.id !== id) throw new ForbiddenException()

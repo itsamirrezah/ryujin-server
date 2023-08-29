@@ -8,7 +8,7 @@ export class UsersService {
 
   async findOne(userArgs: Prisma.UserWhereUniqueInput, sanitize: false): Promise<User>;
   async findOne(userArgs: Prisma.UserWhereUniqueInput, sanitize?: true): Promise<UserSanitized>;
-  async findOne(userArgs: Prisma.UserWhereUniqueInput, sanitize: boolean): Promise<User | UserSanitized> {
+  async findOne(userArgs: Prisma.UserWhereUniqueInput, sanitize = true): Promise<User | UserSanitized> {
     const expression = Object.keys(userArgs).map(key => {
       return { [key]: userArgs[key] }
     })

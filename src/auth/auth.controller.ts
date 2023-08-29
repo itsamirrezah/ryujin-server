@@ -14,6 +14,7 @@ import {
   UnauthorizedException,
   UseGuards
 } from '@nestjs/common';
+import { SessionData } from 'express-session';
 import { TokenExpiredError } from 'jsonwebtoken';
 import {
   IncorrectCredentials,
@@ -35,13 +36,13 @@ export class AuthController {
 
   @Get('/')
   @UseGuards(AuthGuard)
-  async current(@Session() session: any) {
+  async current(@Session() session: SessionData) {
     return session.user
   }
 
   @HttpCode(201)
   @Post('/')
-  async signUp(@Body() body: SignUpDto, @Session() session: any) {
+  async signUp(@Body() body: SignUpDto, @Session() session: SessionData) {
     const { email, username, password } = body
     try {
       const user = await this.authService.signUp(email, username, password)
@@ -55,7 +56,7 @@ export class AuthController {
   }
 
   @Post('/sign-in')
-  async signIn(@Body() body: SignInDto, @Session() session: any) {
+  async signIn(@Body() body: SignInDto, @Session() session: SessionData) {
     try {
       const user = await this.authService.signin(body.usernameOrEmail, body.password)
       session.user = user
@@ -69,7 +70,7 @@ export class AuthController {
   }
 
   @Post('/google')
-  async signWithGoogle(@Body() body: SignWithGoogleDto, @Session() session: any) {
+  async signWithGoogle(@Body() body: SignWithGoogleDto, @Session() session: SessionData) {
     try {
       const user = await this.authService.signWithGoogle(body.access)
       session.user = user
@@ -82,7 +83,7 @@ export class AuthController {
 
   @Redirect(process.env.WEB_HOST)
   @Get('verify')
-  async verifyEmail(@Query() query: VerifyEmailDto, @Session() session: any) {
+  async verifyEmail(@Query() query: VerifyEmailDto, @Session() session: SessionData) {
     try {
       const user = await this.authService.verifyUserEmail(query.token)
       session.user = user
