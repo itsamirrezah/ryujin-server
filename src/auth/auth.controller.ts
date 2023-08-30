@@ -10,10 +10,12 @@ import {
   Post,
   Query,
   Redirect,
+  Req,
   Session,
   UnauthorizedException,
   UseGuards
 } from '@nestjs/common';
+import { Request } from 'express';
 import { SessionData } from 'express-session';
 import { TokenExpiredError } from 'jsonwebtoken';
 import {
@@ -79,6 +81,18 @@ export class AuthController {
       if (e instanceof IncorrectGoogleToken) throw new UnauthorizedException(e.message)
       throw new InternalServerErrorException("An unexpected error occurred")
     }
+  }
+
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @Post('/logout')
+  async onLogout(@Req() req: Request) {
+    await new Promise<void>((res, rej) => {
+      req.session.destroy(err => {
+        if (err) rej(new InternalServerErrorException("logout failed"))
+        else res()
+      })
+    })
   }
 
   @Redirect(process.env.WEB_HOST)
