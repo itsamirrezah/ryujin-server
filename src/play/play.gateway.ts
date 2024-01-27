@@ -19,7 +19,8 @@ import { ServerEvents, PlayerInfo } from './types';
 
 @UsePipes(new ValidationPipe())
 @WebSocketGateway({
-  namespace: 'play',
+  namespace: "/play",
+  transports: ["websocket"],
   cors: {
     origin: [process.env.WEB_HOST],
     credentials: true

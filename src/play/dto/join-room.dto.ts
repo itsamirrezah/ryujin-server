@@ -5,6 +5,5 @@ export class JoinRoomDto {
   @IsOptional()
   @MaxLength(10)
   roomId: string;
-
 }
 

@@ -116,4 +116,11 @@ export class PlayService {
     return game.playerLeft(playerId).calculateRemainingTime()
   }
 
+  async isRoomAvailable(roomId: string) {
+    const room = await this.roomService.getRoomById(roomId)
+    const isAvailable = !room.isFull() && room.players.length > 0
+    if (!isAvailable) throw new Error("not available")
+    return room
+  }
+
 }
