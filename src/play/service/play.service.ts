@@ -20,6 +20,13 @@ export class PlayService {
     return room
   }
 
+  async leftFromPrevRoom(playerId: string): Promise<void> {
+    const room = await this.roomService.getRoomByPlayerId(playerId)
+    if (!room) return;
+    const updatedRoom = room.playerLeft(playerId)
+    await this.roomService.updateRoomDb(updatedRoom)
+  }
+
   async joinRoom(player: PlayerInfo, roomId?: string): Promise<Room> {
     if (!roomId)
       return await this.roomService.joinRoom(player)
@@ -110,17 +117,25 @@ export class PlayService {
   }
 
   async playerLeft(playerId: string) {
+    const room = await this.roomService.getRoomByPlayerId(playerId)
+    if (!room) {
+      return;
+    }
+    room.playerLeft(playerId)
+    await this.roomService.updateRoomDb(room)
     const game = await this.gameService.getGameByPlayer(playerId)
     if (!game) return;
 
-    return game.playerLeft(playerId).calculateRemainingTime()
+    const updatedGame = game.playerLeft(playerId).calculateRemainingTime()
+    await this.gameService.updateGameDb(updatedGame)
+    return updatedGame
+
   }
 
   async isRoomAvailable(roomId: string) {
     const room = await this.roomService.getRoomById(roomId)
-    const isAvailable = !room.isFull() && room.players.length > 0
+    const isAvailable = !room.isFull() && !room.isObsolote() && room.players.length > 0
     if (!isAvailable) throw new Error("not available")
     return room
   }
-
 }

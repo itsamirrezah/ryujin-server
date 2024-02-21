@@ -78,6 +78,7 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async createOrJoinRoom(@MessageBody() payload: JoinRoomDto, @ConnectedSocket() client: Socket) {
     const userSess = client.request['session']['user']
     const player = { socketId: client.id, userId: userSess.id, username: userSess.username } as PlayerInfo
+    await this.playService.leftFromPrevRoom(player.socketId)
     const room = await this.playService.joinRoom(player, payload?.roomId)
     await client.join(room.id)
     this.server.to(room.id).emit("JOIN_ROOM", room)

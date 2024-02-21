@@ -31,8 +31,8 @@ export class RoomService {
     const stringifyRooms = await this.redisService.mget(...roomIds)
 
     for (let i = 0; i < stringifyRooms.length; i++) {
-      const room = JSON.parse(stringifyRooms[i]) as Room
-      if (room.players.length < 2 && !room.isPrivate) return new Room(room)
+      const room = new Room(JSON.parse(stringifyRooms[i]) as Room)
+      if (room.players.length < 2 && !room.isObsolote() && !room.isPrivate) return room
     }
     return;
   }
@@ -44,7 +44,24 @@ export class RoomService {
     const parsedRoom = JSON.parse(stringifyRoom) as Room
     return new Room(parsedRoom)
   }
+
+  async getRoomByPlayerId(playerId: string) {
+    const roomIds = await this.redisService.keys(`room:*`)
+    if (roomIds.length === 0) return;
+
+    for (let i = 0; i < roomIds.length; i++) {
+      const stringifyRoom = await this.redisService.get(roomIds[i])
+      const parsedRoom = JSON.parse(stringifyRoom) as Room
+      const room = new Room(parsedRoom)
+      if (room.hasUser(playerId)) {
+        return room
+      }
+    }
+    return;
+  }
+
   async updateRoomDb(room: Room) {
     await this.redisService.set(`room:${room.id}`, JSON.stringify(room))
   }
+
 }
