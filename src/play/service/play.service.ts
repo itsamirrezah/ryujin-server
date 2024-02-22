@@ -20,17 +20,19 @@ export class PlayService {
     return room
   }
 
-  async leftFromPrevRoom(playerId: string): Promise<void> {
+  async leftFromPrevRoom(playerId: string): Promise<Room> {
     const room = await this.roomService.getRoomByPlayerId(playerId)
     if (!room) return;
     const updatedRoom = room.playerLeft(playerId)
     await this.roomService.updateRoomDb(updatedRoom)
+    return updatedRoom
   }
 
   async joinRoom(player: PlayerInfo, roomId?: string): Promise<Room> {
     if (!roomId)
       return await this.roomService.joinRoom(player)
     const room = await this.roomService.getRoomById(roomId)
+    if (room.isObsolote()) throw new Error("Room is no longer in used")
     if (room.hasUser(player.socketId)) throw new Error("already join in room")
     if (!room) throw new Error("room not found")
     const updatedRoom = room.join(player)
@@ -116,20 +118,23 @@ export class PlayService {
     return updatedRoom
   }
 
-  async playerLeft(playerId: string) {
-    const room = await this.roomService.getRoomByPlayerId(playerId)
+  async playerLeftRoom(socketId: string): Promise<Room> | undefined {
+    const room = await this.roomService.getRoomByPlayerId(socketId)
     if (!room) {
       return;
     }
-    room.playerLeft(playerId)
+    room.playerLeft(socketId)
     await this.roomService.updateRoomDb(room)
-    const game = await this.gameService.getGameByPlayer(playerId)
+    return room
+  }
+
+  async playerLeftGame(socketId: string): Promise<Game> {
+    const game = await this.gameService.getGameByPlayer(socketId)
     if (!game) return;
 
-    const updatedGame = game.playerLeft(playerId).calculateRemainingTime()
+    const updatedGame = game.playerLeft(socketId).calculateRemainingTime()
     await this.gameService.updateGameDb(updatedGame)
     return updatedGame
-
   }
 
   async isRoomAvailable(roomId: string) {
