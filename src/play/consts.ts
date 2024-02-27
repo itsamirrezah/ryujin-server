@@ -37,10 +37,10 @@ export const cards: CardType[] = [
 ]
 
 export const SUB_JOIN_ROOM = 'JOIN_ROOM';
-export const SUB_CANCEL_JOIN = 'CANCEL_JOIN';
+export const SUB_LEAVE_ROOM = 'LEAVE_ROOM';
 export const SUB_MOVE = 'MOVE'
-export const SUB_FLAG = 'OPPONENT_FLAG'
+export const SUB_CLAIM_OPPONENT_TIMEOUT = 'CLAIM_OPPONENT_TIMEOUT'
 export const SUB_RESIGNATION = 'RESIGNATION'
 export const SUB_CREATE_ROOM = "CREATE_ROOM"
-export const SUB_PASS = "PASS"
-export const SUB_REMATCH = "REMATCH"
+export const SUB_PASS_TURN = "PASS_TURN"
+export const SUB_REQUEST_REMATCH = "REQUEST_REMATCH"

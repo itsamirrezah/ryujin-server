@@ -50,7 +50,7 @@ export class Game {
     const whiteCards = wCards
     const blackCards = bCards
     const reserveCards = deck
-    const gameTime = 10000000
+    const gameTime = 100000
     const whiteRemainingTime = gameTime
     const blackRemainingTime = gameTime
     const lastTurnChangedTime = new Date().getTime()

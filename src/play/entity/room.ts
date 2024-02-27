@@ -5,14 +5,14 @@ export class Room {
   public readonly players: PlayerInfo[] = []
   public id: string;
   public isPrivate: boolean
-  public obsolote: boolean;
+  public obsolete: boolean;
   public wantsRematch: string[] = []
 
   constructor(room: Partial<Room>) {
     this.id = room.id;
     this.players = room.players;
     this.isPrivate = room.isPrivate;
-    this.obsolote = room.obsolote;
+    this.obsolete = room.obsolete;
     this.wantsRematch = room.wantsRematch
   }
 
@@ -22,7 +22,7 @@ export class Room {
         id: nanoid(8),
         players: [player],
         isPrivate,
-        obsolote: false,
+        obsolete: false,
         wantsRematch: []
       }
     )
@@ -38,8 +38,8 @@ export class Room {
     return this.players.length === 2
   }
 
-  isObsolote(): boolean {
-    return this.obsolote
+  isObsolete(): boolean {
+    return this.obsolete
   }
 
   setPrivate() {
@@ -62,9 +62,10 @@ export class Room {
   }
 
   playerLeft(playerId: string) {
-    const index = this.players.findIndex(p => p.userId === playerId)
+    const index = this.players.findIndex(p => p.socketId === playerId)
+    if (index < 0) return this;
     this.players.splice(index, 1)
-    this.obsolote = true
+    this.obsolete = true
     return this
   }
 }

@@ -48,7 +48,7 @@ export type OpponentMovePayload = ({
   type: "pass"
 }) & TimePayload;
 
-export type JoinRoomPayload = {
+export type UpdatePlayersPayload = {
   id: string,
   players: PlayerInfo[]
 }
@@ -63,23 +63,24 @@ export type GamePayload = {
   turnId: string,
   gameTime: number
 }
+
 export type EndGamePayload = {
   endGame: EndGame
 } & Omit<GamePayload, "gameTime" | "turnId"> & TimePayload
 
-export type RejMovePayload = Omit<GamePayload, "gameTime"> & TimePayload
+export type MoveRejectedPayload = Omit<GamePayload, "gameTime"> & TimePayload
 
-export type AckMovePayload = {
+export type MoveConfirmedPayload = {
   replacedCard: CardType
 } & TimePayload
 
 export type ServerEvents = {
-  JOIN_ROOM: (payload: JoinRoomPayload) => void
+  UPDATE_PLAYERS: (payload: UpdatePlayersPayload) => void
   START_GAME: (payload: GamePayload) => void
   OPPONENT_MOVED: (payload: OpponentMovePayload) => void,
   END_GAME: (payload: EndGamePayload) => void
-  ACK_MOVE: (payload: AckMovePayload) => void
-  REJ_MOVE: (payload: RejMovePayload) => void
-  REJ_FLAG: (payload: TimePayload) => void,
+  MOVE_CONFIRMED: (payload: MoveConfirmedPayload) => void
+  MOVE_REJECTED: (payload: MoveRejectedPayload) => void
+  TIMEOUT_REJECTED: (payload: TimePayload) => void,
   OPPONENT_REMATCH: () => void
 }

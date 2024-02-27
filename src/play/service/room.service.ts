@@ -32,7 +32,7 @@ export class RoomService {
 
     for (let i = 0; i < stringifyRooms.length; i++) {
       const room = new Room(JSON.parse(stringifyRooms[i]) as Room)
-      if (room.players.length < 2 && !room.isObsolote() && !room.isPrivate) return room
+      if (room.players.length < 2 && !room.isObsolete() && !room.isPrivate) return room
     }
     return;
   }

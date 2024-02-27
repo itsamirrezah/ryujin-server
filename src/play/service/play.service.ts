@@ -32,7 +32,7 @@ export class PlayService {
     if (!roomId)
       return await this.roomService.joinRoom(player)
     const room = await this.roomService.getRoomById(roomId)
-    if (room.isObsolote()) throw new Error("Room is no longer in used")
+    if (room.isObsolete()) throw new Error("Room is no longer in used")
     if (room.hasUser(player.socketId)) throw new Error("already join in room")
     if (!room) throw new Error("room not found")
     const updatedRoom = room.join(player)
@@ -139,7 +139,7 @@ export class PlayService {
 
   async isRoomAvailable(roomId: string) {
     const room = await this.roomService.getRoomById(roomId)
-    const isAvailable = !room.isFull() && !room.isObsolote() && room.players.length > 0
+    const isAvailable = !room.isFull() && !room.isObsolete() && room.players.length > 0
     if (!isAvailable) throw new Error("not available")
     return room
   }
