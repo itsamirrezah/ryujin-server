@@ -32,8 +32,6 @@ import { SignWithGoogleDto } from './dto/sign-with-google.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { AuthService } from './service/auth.service';
 
-const sleep = (delay: number) => new Promise((res) => setTimeout(res, delay))
-
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
