@@ -19,6 +19,7 @@ import { Request } from 'express';
 import { SessionData } from 'express-session';
 import { TokenExpiredError } from 'jsonwebtoken';
 import {
+  ConfirmationEmailRequestDelayedException,
   IncorrectCredentials,
   IncorrectGoogleToken,
   UserAlreadyExistError,
@@ -48,7 +49,7 @@ export class AuthController {
     const { email, username, password } = body
     try {
       const user = await this.authService.signUp(email, username, password)
-      this.authService.sendEmailVerificationLink(user.id, user.email)
+      this.authService.sendConfirmationEmail(user.id, user.email)
       session.user = user
       return user
     } catch (e: unknown) {
@@ -93,6 +94,25 @@ export class AuthController {
         else res()
       })
     })
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/send-confirmation-email')
+  async sendConfirmationEmail(@Session() session: SessionData) {
+    try {
+      await this.authService.sendConfirmationEmail(session.user.id, session.user.email)
+    } catch (e) {
+      if (e instanceof ConfirmationEmailRequestDelayedException) {
+        throw new UnauthorizedException(e.message)
+      }
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @HttpCode(200)
+  @Get("/check-confirmation-status")
+  async isConfirmationEmailAvailable(@Session() session: SessionData) {
+    return await this.authService.isConfirmationEmailAvailable(session.user.id)
   }
 
   @Redirect(process.env.WEB_HOST)

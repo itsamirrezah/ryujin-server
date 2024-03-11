@@ -1,9 +1,16 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { IncorrectCredentials, UserAlreadyExistError, UserConflictError, UserNotFoundError } from 'src/common/errors';
+import {
+  ConfirmationEmailRequestDelayedException,
+  IncorrectCredentials,
+  UserAlreadyExistError,
+  UserConflictError,
+  UserNotFoundError
+} from 'src/common/errors';
 import { UserSanitized } from 'src/common/utils';
 import { UsersService } from 'src/users/users.service';
+import { EmailVerificationService } from './email-verification.service';
 import { GoogleAuthService } from './google-auth.service';
 import { HashingService } from './hashing.service';
 
@@ -18,7 +25,8 @@ export class AuthService {
     private readonly hashingService: HashingService,
     private readonly googleAuthService: GoogleAuthService,
     private readonly mailService: MailerService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly emailVerificationService: EmailVerificationService
   ) { }
 
   async signUp(email: string, username: string, password: string): Promise<UserSanitized> {
@@ -44,15 +52,19 @@ export class AuthService {
     return await this.userService.create({ email, googleId, emailConfirmed: true })
   }
 
-  sendEmailVerificationLink(userId: string, email: string) {
-    const token = this.jwtService.sign(
-      { user: { id: userId } },
+  async sendConfirmationEmail(userId: string, email: string) {
+    const { key, ttl } = await this.emailVerificationService.getVerificationKey(userId)
+    if (key) {
+      throw new ConfirmationEmailRequestDelayedException(`wait for ${ttl} seoncds.`, ttl)
+    }
+    const token = this.jwtService.sign({ user: { id: userId } },
       {
         secret: process.env.JWT_VERIFY_SECRET,
-        expiresIn: '72h'
+        expiresIn: '5m'
       },
     )
     const verificationLink = `${process.env.HOST}/auth/verify?token=${token}`
+    await this.emailVerificationService.setVerificationKey(userId, token, 5 * 60)
     this.mailService.sendMail({
       from: 'ryujin@ryujin.dev',
       subject: 'Please Confirm Your Email Address',
@@ -67,5 +79,11 @@ export class AuthService {
     )
     if (!payload && !payload.user) throw new Error("token is invalid")
     return await this.userService.updateOneById(payload.user.id, { emailConfirmed: true })
+  }
+
+  async isConfirmationEmailAvailable(userId: string) {
+    const { key, ttl } = await this.emailVerificationService.getVerificationKey(userId)
+    if (!key) return { isValid: true, ttl };
+    return { isValid: false, ttl }
   }
 }
