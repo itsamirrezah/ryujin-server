@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Game } from '../entity/game';
 import { Room } from '../entity/room';
 import { InvalidMoveException } from '../error';
-import { SquareType, CardType, PlayerInfo } from '../types';
+import { SquareType, CardType, PlayerInfo, GameInfo } from '../types';
 import { GameService } from './game.service';
 import { RoomService } from './room.service';
 
@@ -14,8 +14,8 @@ export class PlayService {
     private readonly gameService: GameService
   ) { }
 
-  async createPrivateRoom(player: PlayerInfo) {
-    const room = (await this.roomService.createRoom(player)).setPrivate()
+  async createPrivateRoom(player: PlayerInfo, gameInfo: GameInfo) {
+    const room = (await this.roomService.createRoom(player, gameInfo)).setPrivate()
     await this.roomService.updateRoomDb(room)
     return room
   }
@@ -28,9 +28,9 @@ export class PlayService {
     return updatedRoom
   }
 
-  async joinRoom(player: PlayerInfo, roomId?: string): Promise<Room> {
+  async joinRoom(player: PlayerInfo, gameInfo: GameInfo, roomId?: string): Promise<Room> {
     if (!roomId)
-      return await this.roomService.joinRoom(player)
+      return await this.roomService.joinRoom(player, gameInfo)
     const room = await this.roomService.getRoomById(roomId)
     if (room.isObsolete()) throw new Error("Room is no longer in used")
     if (room.hasUser(player.socketId)) throw new Error("already join in room")
@@ -40,10 +40,10 @@ export class PlayService {
     return updatedRoom
   }
 
-  async prepareGame(roomId: string, players: PlayerInfo[]): Promise<Game> {
+  async prepareGame(roomId: string, players: PlayerInfo[], gameInfo: GameInfo): Promise<Game> {
     const updatedRoom = (await this.roomService.getRoomById(roomId)).resetRematch()
     await this.roomService.updateRoomDb(updatedRoom)
-    return this.gameService.create(updatedRoom.id, players)
+    return this.gameService.create(updatedRoom.id, players, gameInfo)
   }
 
   async movePiece(gameId: string, from: SquareType, to: SquareType, selectedCard: CardType, playerId: string) {

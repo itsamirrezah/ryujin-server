@@ -1,9 +1,10 @@
 import { nanoid } from 'nanoid'
-import { PlayerInfo } from '../types';
+import { GameInfo, PlayerInfo } from '../types';
 
 export class Room {
-  public readonly players: PlayerInfo[] = []
   public id: string;
+  public readonly players: PlayerInfo[] = []
+  public gameInfo: GameInfo
   public isPrivate: boolean
   public obsolete: boolean;
   public wantsRematch: string[] = []
@@ -12,15 +13,17 @@ export class Room {
     this.id = room.id;
     this.players = room.players;
     this.isPrivate = room.isPrivate;
+    this.gameInfo = room.gameInfo;
     this.obsolete = room.obsolete;
     this.wantsRematch = room.wantsRematch
   }
 
-  static createNewRoom(player: PlayerInfo, isPrivate = false) {
+  static create(player: PlayerInfo, gameInfo: GameInfo, isPrivate = false) {
     return new Room(
       {
         id: nanoid(8),
         players: [player],
+        gameInfo,
         isPrivate,
         obsolete: false,
         wantsRematch: []
@@ -68,4 +71,5 @@ export class Room {
     this.obsolete = true
     return this
   }
+
 }

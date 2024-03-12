@@ -36,6 +36,11 @@ export type PlayerInfo = {
   username: string
 }
 
+export type GameInfo = {
+  time?: number,
+  numberOfCards?: number
+}
+
 export type TimePayload = { whiteRemaining: number, blackRemaining: number }
 
 export type OpponentMovePayload = ({

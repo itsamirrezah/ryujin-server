@@ -10,14 +10,24 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from "socket.io";
 import { UsersService } from 'src/users/users.service';
-import { SUB_JOIN_ROOM, SUB_MOVE, SUB_CLAIM_OPPONENT_TIMEOUT, SUB_RESIGNATION, SUB_CREATE_ROOM, SUB_PASS_TURN, SUB_REQUEST_REMATCH, SUB_LEAVE_ROOM } from './consts';
+import {
+  SUB_JOIN_ROOM,
+  SUB_MOVE,
+  SUB_CLAIM_OPPONENT_TIMEOUT,
+  SUB_RESIGNATION,
+  SUB_CREATE_ROOM,
+  SUB_PASS_TURN,
+  SUB_REQUEST_REMATCH,
+  SUB_LEAVE_ROOM
+} from './consts';
+import { GameInfoDto } from './dto/game-info-dto';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { MoveDto } from './dto/move-dto';
 import { InvalidMoveException } from './error';
 import { PlayService } from './service/play.service';
 import { ServerEvents, PlayerInfo } from './types';
 
-@UsePipes(new ValidationPipe())
+@UsePipes(new ValidationPipe({ transform: true }))
 @WebSocketGateway({
   namespace: "/play",
   transports: ["websocket"],
@@ -26,6 +36,7 @@ import { ServerEvents, PlayerInfo } from './types';
     credentials: true
   },
 })
+
 export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server<ServerEvents>
@@ -73,10 +84,10 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage(SUB_CREATE_ROOM)
-  async createRoom(client: Socket<ServerEvents>) {
+  async createRoom(@MessageBody() payload: GameInfoDto, @ConnectedSocket() client: Socket<ServerEvents>) {
     const userSess = client.request['session']['user']
     const player = { socketId: client.id, userId: userSess.id, username: userSess.username } as PlayerInfo
-    const room = await this.playService.createPrivateRoom(player)
+    const room = await this.playService.createPrivateRoom(player, payload)
     await client.join(room.id)
     client.emit("UPDATE_PLAYERS", room)
     return room
@@ -94,11 +105,11 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await client.leave(prevRoom.id)
     }
 
-    const room = await this.playService.joinRoom(player, payload?.roomId)
+    const room = await this.playService.joinRoom(player, payload.gameInfo, payload?.roomId)
     await client.join(room.id)
     this.server.to(room.id).emit("UPDATE_PLAYERS", room)
     if (room.isFull()) {
-      const game = await this.playService.prepareGame(room.id, room.players)
+      const game = await this.playService.prepareGame(room.id, room.players, room.gameInfo)
       this.server.to(room.id).emit(
         "START_GAME",
         {
@@ -264,7 +275,7 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { gameId, playerId } = payload
     const room = await this.playService.requestRematch(gameId, playerId)
     if (room.wantsRematch.length >= 2) {
-      const game = await this.playService.prepareGame(room.id, room.players)
+      const game = await this.playService.prepareGame(room.id, room.players, room.gameInfo)
       return this.server.to(room.id).emit(
         "START_GAME",
         {

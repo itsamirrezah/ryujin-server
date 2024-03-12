@@ -1,30 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from 'src/common/redis.service';
 import { Room } from '../entity/room';
-import { PlayerInfo } from '../types';
+import { GameInfo, PlayerInfo } from '../types';
 
 @Injectable()
 export class RoomService {
-
   constructor(private readonly redisService: RedisService) { }
 
-  async joinRoom(player: PlayerInfo): Promise<Room> {
-    const availableRoom = await this.getAvailableRoom()
+  async joinRoom(player: PlayerInfo, gameInfo: GameInfo): Promise<Room> {
+    const availableRoom = await this.getAvailableRoom(gameInfo)
     if (availableRoom) {
       const updatedRoom = availableRoom.join(player)
       await this.redisService.set(`room:${updatedRoom.id}`, JSON.stringify(updatedRoom))
       return updatedRoom
     }
-    return this.createRoom(player)
+    return this.createRoom(player, gameInfo)
   }
 
-  async createRoom(player: PlayerInfo): Promise<Room> {
-    const room = Room.createNewRoom(player)
+  async createRoom(player: PlayerInfo, gameInfo: GameInfo): Promise<Room> {
+    const room = Room.create(player, gameInfo)
     await this.redisService.set(`room:${room.id}`, JSON.stringify(room))
     return room
   }
 
-  async getAvailableRoom(): Promise<Room> | undefined {
+  async getAvailableRoom(gameInfo: GameInfo): Promise<Room> | undefined {
     const roomIds = await this.redisService.keys('room:*')
     if (roomIds.length <= 0) return;
 
@@ -32,7 +31,16 @@ export class RoomService {
 
     for (let i = 0; i < stringifyRooms.length; i++) {
       const room = new Room(JSON.parse(stringifyRooms[i]) as Room)
-      if (room.players.length < 2 && !room.isObsolete() && !room.isPrivate) return room
+      if (
+        room.players.length >= 2 ||
+        room.isObsolete() ||
+        room.isPrivate ||
+        room.gameInfo.time !== gameInfo.time ||
+        room.gameInfo.numberOfCards !== gameInfo.numberOfCards
+      ) {
+        continue
+      }
+      return room
     }
     return;
   }

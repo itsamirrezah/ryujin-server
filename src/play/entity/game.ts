@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { cards, DEFAULT_POSITION } from "../consts";
-import { CardType, PlayerInfo, EndGame } from "../types";
+import { CardType, PlayerInfo, EndGame, GameInfo } from "../types";
 import { PieceType, Position, SquareType } from "../types";
 
 export class Game {
@@ -38,7 +38,7 @@ export class Game {
     this.endGame = game.endGame
   }
 
-  static createEmptyGame(roomId: string, players: PlayerInfo[]) {
+  static create(roomId: string, players: PlayerInfo[], gameInfo: GameInfo) {
     const id = nanoid(8)
     const turnColor = Math.random() > .5 ? "w" : "b"
     const [p1, p2] = players;
@@ -46,11 +46,11 @@ export class Game {
     const blackId = whiteId === p1.socketId ? p2.socketId : p1.socketId
     const turnId = turnColor === "w" ? whiteId : blackId
     const boardPosition = DEFAULT_POSITION
-    const [wCards, bCards, deck] = this.shuffleCards(cards)
+    const [wCards, bCards, deck] = this.shuffleCards(cards, gameInfo.numberOfCards)
     const whiteCards = wCards
     const blackCards = bCards
     const reserveCards = deck
-    const gameTime = 100000
+    const gameTime = gameInfo.time
     const whiteRemainingTime = gameTime
     const blackRemainingTime = gameTime
     const lastTurnChangedTime = new Date().getTime()
@@ -73,32 +73,37 @@ export class Game {
     })
   }
 
-  static shuffleCards(allCards: CardType[]) {
-    const deck = [...allCards]
-    const wCards: CardType[] = []
-    const bCards: CardType[] = []
-
-    for (let i = 0; i < 4; i++) {
-      const randomNumber = Math.random()
-      const selectedIdx = Math.floor(randomNumber * deck.length)
-      const card = deck[selectedIdx]
-      if (wCards.length < 2) wCards.push(card)
-      else if (bCards.length < 2) bCards.push(card)
-      deck.splice(selectedIdx, 1)
+  static shuffleCards(allCards: CardType[], numberOfCards: number) {
+    const tempDeck = [...allCards]
+    let deck = [] as CardType[]
+    for (let i = 0; i < numberOfCards && tempDeck.length > 0; i++) {
+      const selectedIdx = Math.floor(Math.random() * tempDeck.length)
+      const card = tempDeck[selectedIdx]
+      deck.push(card)
+      tempDeck.splice(selectedIdx, 1)
     }
+    const wCards = deck.splice(0, 2)
+    const bCards = deck.splice(0, 2)
+
+    if (deck.length < 1 || deck.length > allCards.length || wCards.length !== 2 || bCards.length !== 2) {
+      throw new Error("card shuffling error!")
+    }
+
     return [
       wCards as [CardType, CardType],
       bCards as [CardType, CardType],
-      deck.sort(() => Math.random() < 0.5 ? 1 : -1)
+      deck
     ] as const
   }
 
   hasRoom(roomId: string): boolean {
     return this.roomId === roomId
   }
+
   hasEndGame(): boolean {
     return !!this.endGame
   }
+
   squareHasPiece(square: SquareType): boolean {
     return !!this.boardPosition[square]
   }
@@ -179,6 +184,7 @@ export class Game {
   private hasPiecesLeft(c: "w" | "b") {
     return this.pieceExist(`${c}K`) || this.pieceExist(`${c}P`)
   }
+
   checkEndgameByMove() {
     if (this.endGame) return this
     const opponentColor = this.turnColor === "w" ? "b" : "w"
@@ -223,6 +229,7 @@ export class Game {
     }
     return options
   }
+
   isValidToPassTurn(playerId: string) {
     const [playerCards, playerColor] = playerId === this.whiteId ? [this.whiteCards, "w"] : [this.blackCards, "b"]
     const sourceSquares = Object.entries(this.boardPosition)
