@@ -1,4 +1,4 @@
-import { UsePipes, ValidationPipe } from '@nestjs/common';
+import { UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -8,7 +8,9 @@ import {
   WebSocketGateway,
   WebSocketServer
 } from '@nestjs/websockets';
+import { SessionData } from 'express-session';
 import { Server, Socket } from "socket.io";
+import { AuthGuard } from 'src/auth/auth.guard';
 import { UsersService } from 'src/users/users.service';
 import {
   SUB_JOIN_ROOM,
@@ -49,16 +51,20 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(client: Socket<ServerEvents>, ...args: any[]) {
     //FIX: non authenticated users are still able to connect to gateway in short amount of time, during which they can send events.
     //They will be disconnected from the server eventually.
-    const user = client.request['session']['user']
-    if (!user) {
-      client.disconnect();
+    const session = client.request['session'] as SessionData
+    const sessionId = client.request['sessionID']
+    if (!session || !session?.user || !sessionId) {
+      client.disconnect(true);
       return;
     }
-    const userIsExist = await this.usersService.findOne({ id: user.id })
-    if (!userIsExist) client.disconnect()
+    const serverSession = await this.usersService.findSessionById(sessionId)
+    if (!serverSession) {
+      client.disconnect(true)
+      return;
+    }
   }
 
-  async handleDisconnect(client: Socket<ServerEvents>) {
+  async handleDisconnect(@ConnectedSocket() client: Socket<ServerEvents>) {
     const user = client.request['session']['user']
     if (!user) return;
     const room = await this.playService.playerLeftRoom(client.id)
@@ -83,6 +89,7 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
     })
   }
 
+  @UseGuards(AuthGuard)
   @SubscribeMessage(SUB_CREATE_ROOM)
   async createRoom(@MessageBody() payload: GameInfoDto, @ConnectedSocket() client: Socket<ServerEvents>) {
     const userSess = client.request['session']['user']
@@ -93,6 +100,7 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return room
   }
 
+  @UseGuards(AuthGuard)
   @SubscribeMessage(SUB_JOIN_ROOM)
   async createOrJoinRoom(@MessageBody() payload: JoinRoomDto, @ConnectedSocket() client: Socket<ServerEvents>) {
     const userSess = client.request['session']['user']
@@ -126,6 +134,7 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return room
   }
 
+  @UseGuards(AuthGuard)
   @SubscribeMessage(SUB_LEAVE_ROOM)
   async cancelJoinRoom(@ConnectedSocket() client: Socket<ServerEvents>) {
     const room = await this.playService.playerLeftRoom(client.id)
@@ -137,6 +146,7 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return room
   }
 
+  @UseGuards(AuthGuard)
   @SubscribeMessage(SUB_MOVE)
   async movePiece(@MessageBody() movePayload: MoveDto, @ConnectedSocket() client: Socket<ServerEvents>) {
     const { gameId, playerId, from, to, selectedCard } = movePayload
@@ -196,6 +206,7 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @UseGuards(AuthGuard)
   @SubscribeMessage(SUB_PASS_TURN)
   async passTurn(@MessageBody() payload: { gameId: string, playerId: string }, @ConnectedSocket() client: Socket<ServerEvents>) {
     const { gameId, playerId } = payload
@@ -226,6 +237,7 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @UseGuards(AuthGuard)
   @SubscribeMessage(SUB_CLAIM_OPPONENT_TIMEOUT)
   async confirmPlayerFlag(@MessageBody() gameId: string, @ConnectedSocket() client: Socket<ServerEvents>) {
     const game = await this.playService.hasGameEndedByFlag(gameId)
@@ -248,6 +260,7 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit("TIMEOUT_REJECTED", { whiteRemaining: game.whiteRemainingTime, blackRemaining: game.blackRemainingTime })
   }
 
+  @UseGuards(AuthGuard)
   @SubscribeMessage(SUB_RESIGNATION)
   async confirmPlayerResign(@MessageBody() payload: { gameId: string, playerId: string }) {
     const { gameId, playerId } = payload
@@ -270,6 +283,7 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
 
+  @UseGuards(AuthGuard)
   @SubscribeMessage(SUB_REQUEST_REMATCH)
   async rematchRequest(@MessageBody() payload: { gameId: string, playerId: string }, @ConnectedSocket() client: Socket<ServerEvents>) {
     const { gameId, playerId } = payload

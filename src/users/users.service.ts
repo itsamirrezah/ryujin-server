@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaClient, User } from '@prisma/client';
+import { SessionData } from 'express-session';
+import { RedisService } from 'src/common/redis.service';
 import { excludeUserSensetiveKeys, UserSanitized } from 'src/common/utils';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaClient) { }
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly redisService: RedisService
+  ) { }
 
   async findOne(userArgs: Prisma.UserWhereUniqueInput, sanitize: false): Promise<User>;
   async findOne(userArgs: Prisma.UserWhereUniqueInput, sanitize?: true): Promise<UserSanitized>;
@@ -37,5 +42,10 @@ export class UsersService {
       data: { ...userArgs }
     })
     return excludeUserSensetiveKeys(user)
+  }
+
+  async findSessionById(session: string) {
+    const res = await this.redisService.get(`sess:${session}`)
+    return res;
   }
 }
