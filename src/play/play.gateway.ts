@@ -62,11 +62,23 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.disconnect(true)
       return;
     }
+    const activeSocket = await this.usersService.getActiveSocket(session.user.id)
+    if (activeSocket && activeSocket !== client.id) {
+      client.disconnect(true);
+      return;
+    }
+    await this.usersService.setActiveSocket(session.user.id, client.id)
   }
 
   async handleDisconnect(@ConnectedSocket() client: Socket<ServerEvents>) {
-    const user = client.request['session']['user']
-    if (!user) return;
+    const session = client.request['session'] as SessionData
+    if (!session.user) return;
+
+    const activeSocket = await this.usersService.getActiveSocket(session.user.id)
+    if (activeSocket === client.id) {
+      await this.usersService.removeActiveSocket(session.user.id)
+    }
+
     const room = await this.playService.playerLeftRoom(client.id)
     if (room) {
       if (room.players.length > 0) {

@@ -8,7 +8,7 @@ export class RoomService {
   constructor(private readonly redisService: RedisService) { }
 
   async joinRoom(player: PlayerInfo, gameInfo: GameInfo): Promise<Room> {
-    const availableRoom = await this.getAvailableRoom(gameInfo)
+    const availableRoom = await this.getAvailableRoom(gameInfo, player.userId)
     if (availableRoom) {
       const updatedRoom = availableRoom.join(player)
       await this.redisService.set(`room:${updatedRoom.id}`, JSON.stringify(updatedRoom))
@@ -23,7 +23,7 @@ export class RoomService {
     return room
   }
 
-  async getAvailableRoom(gameInfo: GameInfo): Promise<Room> | undefined {
+  async getAvailableRoom(gameInfo: GameInfo, userId: string): Promise<Room> | undefined {
     const roomIds = await this.redisService.keys('room:*')
     if (roomIds.length <= 0) return;
 
@@ -32,6 +32,7 @@ export class RoomService {
     for (let i = 0; i < stringifyRooms.length; i++) {
       const room = new Room(JSON.parse(stringifyRooms[i]) as Room)
       if (
+        room.hasUserId(userId) ||
         room.players.length >= 2 ||
         room.isObsolete() ||
         room.isPrivate ||

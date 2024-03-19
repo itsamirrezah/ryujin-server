@@ -50,8 +50,12 @@ export class Room {
     return this
   }
 
-  hasUser(playerId: string): boolean {
-    return !!this.players.find(player => player.socketId === playerId)
+  hasUser(socketId: string): boolean {
+    return !!this.players.find(player => player.socketId === socketId)
+  }
+
+  hasUserId(userId: string): boolean {
+    return !!this.players.find(player => player.userId === userId)
   }
 
   setRematch(playerId: string) {
