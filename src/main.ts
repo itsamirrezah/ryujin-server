@@ -39,7 +39,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({ origin: /http:\/\/.*:3000/, credentials: true })
   app.useGlobalPipes(new ValidationPipe())
-  const redisClient = app.get<RedisService>(RedisService)
+  const redisClient = app.get<RedisService>(RedisService).client
   const redisSession = sessionMiddleware(redisClient)
   app.use(redisSession)
   app.useWebSocketAdapter(new CustomSocketIoAdapter(app, redisClient))

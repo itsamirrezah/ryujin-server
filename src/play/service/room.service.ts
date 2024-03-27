@@ -11,7 +11,7 @@ export class RoomService {
     const availableRoom = await this.getAvailableRoom(gameInfo, player.userId)
     if (availableRoom) {
       const updatedRoom = availableRoom.join(player)
-      await this.redisService.set(`room:${updatedRoom.id}`, JSON.stringify(updatedRoom))
+      await this.redisService.client.set(`room:${updatedRoom.id}`, JSON.stringify(updatedRoom))
       return updatedRoom
     }
     return this.createRoom(player, gameInfo)
@@ -19,15 +19,15 @@ export class RoomService {
 
   async createRoom(player: PlayerInfo, gameInfo: GameInfo): Promise<Room> {
     const room = Room.create(player, gameInfo)
-    await this.redisService.set(`room:${room.id}`, JSON.stringify(room))
+    await this.redisService.client.set(`room:${room.id}`, JSON.stringify(room))
     return room
   }
 
   async getAvailableRoom(gameInfo: GameInfo, userId: string): Promise<Room> | undefined {
-    const roomIds = await this.redisService.keys('room:*')
+    const roomIds = await this.redisService.client.keys('room:*')
     if (roomIds.length <= 0) return;
 
-    const stringifyRooms = await this.redisService.mget(...roomIds)
+    const stringifyRooms = await this.redisService.client.mget(...roomIds)
 
     for (let i = 0; i < stringifyRooms.length; i++) {
       const room = new Room(JSON.parse(stringifyRooms[i]) as Room)
@@ -47,19 +47,19 @@ export class RoomService {
   }
 
   async getRoomById(roomId: string) {
-    const roomIds = await this.redisService.keys(`room:${roomId}`)
+    const roomIds = await this.redisService.client.keys(`room:${roomId}`)
     if (roomIds.length !== 1) throw new Error("something went wrong")
-    const stringifyRoom = await this.redisService.get(roomIds[0])
+    const stringifyRoom = await this.redisService.client.get(roomIds[0])
     const parsedRoom = JSON.parse(stringifyRoom) as Room
     return new Room(parsedRoom)
   }
 
   async getRoomByPlayerId(playerId: string) {
-    const roomIds = await this.redisService.keys(`room:*`)
+    const roomIds = await this.redisService.client.keys(`room:*`)
     if (roomIds.length === 0) return;
 
     for (let i = 0; i < roomIds.length; i++) {
-      const stringifyRoom = await this.redisService.get(roomIds[i])
+      const stringifyRoom = await this.redisService.client.get(roomIds[i])
       const parsedRoom = JSON.parse(stringifyRoom) as Room
       const room = new Room(parsedRoom)
       if (room.hasUser(playerId)) {
@@ -70,7 +70,7 @@ export class RoomService {
   }
 
   async updateRoomDb(room: Room) {
-    await this.redisService.set(`room:${room.id}`, JSON.stringify(room))
+    await this.redisService.client.set(`room:${room.id}`, JSON.stringify(room))
   }
 
 }

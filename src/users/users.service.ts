@@ -45,20 +45,20 @@ export class UsersService {
   }
 
   async findSessionById(session: string) {
-    const res = await this.redisService.get(`sess:${session}`)
+    const res = await this.redisService.client.get(`sess:${session}`)
     return res;
   }
 
   async setActiveSocket(userId: string, socketId: string) {
-    await this.redisService.set(`active-socket:${userId}`, socketId)
+    await this.redisService.client.set(`active-socket:${userId}`, socketId)
   }
 
   async getActiveSocket(userId: string) {
-    const activeSocket = await this.redisService.get(`active-socket:${userId}`)
+    const activeSocket = await this.redisService.client.get(`active-socket:${userId}`)
     return activeSocket
   }
 
   async removeActiveSocket(userId: string) {
-    await this.redisService.del(`active-socket:${userId}`)
+    await this.redisService.client.del(`active-socket:${userId}`)
   }
 }

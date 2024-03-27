@@ -158,7 +158,6 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return room
   }
 
-  @UseGuards(AuthGuard)
   @SubscribeMessage(SUB_MOVE)
   async movePiece(@MessageBody() movePayload: MoveDto, @ConnectedSocket() client: Socket<ServerEvents>) {
     const { gameId, playerId, from, to, selectedCard } = movePayload
