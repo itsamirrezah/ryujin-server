@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaClient, User } from '@prisma/client';
-import { SessionData } from 'express-session';
 import { RedisService } from 'src/common/redis.service';
 import { excludeUserSensetiveKeys, UserSanitized } from 'src/common/utils';
 

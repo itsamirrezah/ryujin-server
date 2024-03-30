@@ -36,4 +36,6 @@ lerna-debug.log*
 
 # environment variables
 .env
+.env.prod
+.env.dev
 prisma/seed.js

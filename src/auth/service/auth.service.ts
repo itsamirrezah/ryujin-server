@@ -66,7 +66,7 @@ export class AuthService {
     const verificationLink = `${process.env.HOST}/auth/verify?token=${token}`
     await this.emailVerificationService.setVerificationKey(userId, token, 5 * 60)
     this.mailService.sendMail({
-      from: 'ryujin@ryujin.dev',
+      from: process.env.MAIL_SENDER,
       subject: 'Please Confirm Your Email Address',
       to: email,
       html: `<p>Your Verification Link: <a href=${verificationLink}>Click Here</a></p>`
