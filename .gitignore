@@ -39,3 +39,6 @@ lerna-debug.log*
 .env.prod
 .env.dev
 prisma/seed.js
+
+# secrets
+/secrets
