@@ -82,10 +82,10 @@ export type MoveConfirmedPayload = {
 export type ServerEvents = {
   UPDATE_PLAYERS: (payload: UpdatePlayersPayload) => void
   START_GAME: (payload: GamePayload) => void
-  OPPONENT_MOVED: (payload: OpponentMovePayload) => void,
+  OPPONENT_MOVED: (payload: OpponentMovePayload) => void
   END_GAME: (payload: EndGamePayload) => void
   MOVE_CONFIRMED: (payload: MoveConfirmedPayload) => void
   MOVE_REJECTED: (payload: MoveRejectedPayload) => void
-  TIMEOUT_REJECTED: (payload: TimePayload) => void,
+  TIMEOUT_REJECTED: (payload: TimePayload) => void
   OPPONENT_REMATCH: () => void
 }
