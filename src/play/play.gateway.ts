@@ -1,4 +1,4 @@
-import { UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { OnModuleInit, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -40,14 +40,20 @@ import { ServerEvents, PlayerInfo } from './types';
   },
 })
 
-export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class PlayGateway implements OnGatewayConnection, OnModuleInit, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server<ServerEvents>
 
   constructor(
     private readonly playService: PlayService,
     private readonly usersService: UsersService
-  ) { }
+  ) {
+  }
+  async onModuleInit() {
+    await this.usersService.flushAllActiveSockets()
+    await this.playService.flushAllGames()
+  }
+
 
   async handleConnection(client: Socket<ServerEvents>, ..._args: any[]) {
     //FIX: non authenticated users are still able to connect to gateway in short amount of time, during which they can send events.

@@ -11,7 +11,7 @@ export class RoomService {
     const availableRoom = await this.getAvailableRoom(gameInfo, player.userId)
     if (availableRoom) {
       const updatedRoom = availableRoom.join(player)
-      await this.redisService.client.set(`room:${updatedRoom.id}`, JSON.stringify(updatedRoom))
+      await this.redisService.client.set(`room:${updatedRoom.id}`, JSON.stringify(updatedRoom), "EX", 3600)
       return updatedRoom
     }
     return this.createRoom(player, gameInfo)
@@ -19,7 +19,7 @@ export class RoomService {
 
   async createRoom(player: PlayerInfo, gameInfo: GameInfo): Promise<Room> {
     const room = Room.create(player, gameInfo)
-    await this.redisService.client.set(`room:${room.id}`, JSON.stringify(room))
+    await this.redisService.client.set(`room:${room.id}`, JSON.stringify(room), "EX", 3600)
     return room
   }
 
@@ -70,7 +70,14 @@ export class RoomService {
   }
 
   async updateRoomDb(room: Room) {
-    await this.redisService.client.set(`room:${room.id}`, JSON.stringify(room))
+    await this.redisService.client.set(`room:${room.id}`, JSON.stringify(room), "EX", 3600)
+  }
+
+  async flushAllRooms() {
+    const allRooms = await this.redisService.client.keys(`room:*`)
+    if (allRooms.length <= 0) return;
+    const res = await this.redisService.client.del(...allRooms)
+    return res;
   }
 
 }

@@ -10,7 +10,7 @@ export class GameService {
 
   async create(roomId: string, players: PlayerInfo[], gameInfo: GameInfo): Promise<Game> {
     const newGame = Game.create(roomId, players, gameInfo)
-    await this.redisService.client.set(`game:${newGame.roomId}:${newGame.id}`, JSON.stringify(newGame))
+    await this.redisService.client.set(`game:${newGame.roomId}:${newGame.id}`, JSON.stringify(newGame), "EX", 3600)
     return newGame
   }
 
@@ -31,7 +31,7 @@ export class GameService {
   }
 
   async updateGameDb(game: Game) {
-    await this.redisService.client.set(`game:${game.roomId}:${game.id}`, JSON.stringify(game))
+    await this.redisService.client.set(`game:${game.roomId}:${game.id}`, JSON.stringify(game), "EX", 3600)
   }
 
   async getGameByPlayer(playerId: string) {
@@ -47,4 +47,10 @@ export class GameService {
     return;
   }
 
+  async flushAllGames() {
+    const allGames = await this.redisService.client.keys(`game:*`)
+    if (allGames.length <= 0) return;
+    const res = await this.redisService.client.del(...allGames)
+    return res;
+  }
 }

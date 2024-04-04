@@ -60,4 +60,11 @@ export class UsersService {
   async removeActiveSocket(userId: string) {
     await this.redisService.client.del(`active-socket:${userId}`)
   }
+
+  async flushAllActiveSockets() {
+    const activeSocketsKeys = await this.redisService.client.keys(`active-socket:*`)
+    if (activeSocketsKeys.length <= 0) return
+    const res = await this.redisService.client.del(...activeSocketsKeys)
+    return res
+  }
 }

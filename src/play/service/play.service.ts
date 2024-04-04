@@ -143,4 +143,9 @@ export class PlayService {
     if (!isAvailable) throw new Error("not available")
     return room
   }
+
+  async flushAllGames() {
+    await this.roomService.flushAllRooms()
+    await this.gameService.flushAllGames()
+  }
 }
