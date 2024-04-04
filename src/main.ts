@@ -40,14 +40,17 @@ export function sessionMiddleware(redisClient: Redis) {
     }
   })
 }
-const httpsOptions = {
-  key: readFileSync('./secrets/private.key'),
-  cert: readFileSync('./secrets/certificate.crt'),
-};
+
+function getHttpsOptions() {
+  return {
+    key: readFileSync('./secrets/private.key'),
+    cert: readFileSync('./secrets/certificate.crt'),
+  }
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    httpsOptions: process.env.NODE_ENV === "dev" ? httpsOptions : null
+    httpsOptions: process.env.NODE_ENV === "dev" ? getHttpsOptions() : null
   });
   app.enableCors({ origin: process.env.WEB_HOST, credentials: true })
   app.useGlobalPipes(new ValidationPipe())
