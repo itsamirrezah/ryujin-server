@@ -6,6 +6,7 @@ import { CustomSocketIoAdapter } from './common/custom-socketio-adapter';
 import { RedisService } from './common/redis.service';
 import { Redis } from 'ioredis';
 import RedisStore from 'connect-redis';
+import { readFileSync } from "node:fs"
 
 type UserSession = {
   id: string,
@@ -39,8 +40,15 @@ export function sessionMiddleware(redisClient: Redis) {
     }
   })
 }
+const httpsOptions = {
+  key: readFileSync('./secrets/private.key'),
+  cert: readFileSync('./secrets/certificate.crt'),
+};
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    httpsOptions: process.env.NODE_ENV === "dev" ? httpsOptions : null
+  });
   app.enableCors({ origin: process.env.WEB_HOST, credentials: true })
   app.useGlobalPipes(new ValidationPipe())
   const redisClient = app.get<RedisService>(RedisService).client

@@ -6,7 +6,8 @@ import {
   OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
-  WebSocketServer
+  WebSocketServer,
+  WsException,
 } from '@nestjs/websockets';
 import { SessionData } from 'express-session';
 import { Server, Socket } from "socket.io";
@@ -48,7 +49,7 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly usersService: UsersService
   ) { }
 
-  async handleConnection(client: Socket<ServerEvents>, ...args: any[]) {
+  async handleConnection(client: Socket<ServerEvents>, ..._args: any[]) {
     //FIX: non authenticated users are still able to connect to gateway in short amount of time, during which they can send events.
     //They will be disconnected from the server eventually.
     const session = client.request['session'] as SessionData
@@ -106,10 +107,14 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async createRoom(@MessageBody() payload: GameInfoDto, @ConnectedSocket() client: Socket<ServerEvents>) {
     const userSess = client.request['session']['user']
     const player = { socketId: client.id, userId: userSess.id, username: userSess.username } as PlayerInfo
-    const room = await this.playService.createPrivateRoom(player, payload)
-    await client.join(room.id)
-    client.emit("UPDATE_PLAYERS", room)
-    return room
+    try {
+      const room = await this.playService.createPrivateRoom(player, payload)
+      await client.join(room.id)
+      client.emit("UPDATE_PLAYERS", room)
+      return room
+    } catch (err) {
+      return new WsException("cannot create private room")
+    }
   }
 
   @UseGuards(AuthGuard)
@@ -117,45 +122,62 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async createOrJoinRoom(@MessageBody() payload: JoinRoomDto, @ConnectedSocket() client: Socket<ServerEvents>) {
     const userSess = client.request['session']['user']
     const player = { socketId: client.id, userId: userSess.id, username: userSess.username } as PlayerInfo
-    const prevRoom = await this.playService.leftFromPrevRoom(player.socketId)
-    if (prevRoom) {
-      if (prevRoom.players.length > 0) {
-        client.to(prevRoom.id).emit("UPDATE_PLAYERS", prevRoom)
-      }
-      await client.leave(prevRoom.id)
-    }
 
-    const room = await this.playService.joinRoom(player, payload.gameInfo, payload?.roomId)
-    await client.join(room.id)
-    this.server.to(room.id).emit("UPDATE_PLAYERS", room)
-    if (room.isFull()) {
-      const game = await this.playService.prepareGame(room.id, room.players, room.gameInfo)
-      this.server.to(room.id).emit(
-        "START_GAME",
-        {
-          id: game.id,
-          whiteId: game.whiteId,
-          blackId: game.blackId,
-          whiteCards: game.whiteCards,
-          blackCards: game.blackCards,
-          boardPosition: game.boardPosition,
-          turnId: game.turnId,
-          gameTime: game.gameTime
-        })
+    try {
+      const prevRoom = await this.playService.leftFromPrevRoom(player.socketId)
+      if (prevRoom) {
+        if (prevRoom.players.length > 0) {
+          client.to(prevRoom.id).emit("UPDATE_PLAYERS", prevRoom)
+        }
+        await client.leave(prevRoom.id)
+      }
+      const room = await this.playService.joinRoom(player, payload.gameInfo, payload?.roomId)
+      if (!room.id) {
+        throw new Error("unexpected error")
+      }
+      await client.join(room.id)
+      this.server.to(room.id).emit("UPDATE_PLAYERS", room)
+      if (!room.isFull()) {
+        return room;
+      } else {
+        const game = await this.playService.prepareGame(room.id, room.players, room.gameInfo)
+        if (!game.id) {
+          throw new Error("unexpected error")
+        }
+        this.server.to(room.id).emit(
+          "START_GAME",
+          {
+            id: game.id,
+            whiteId: game.whiteId,
+            blackId: game.blackId,
+            whiteCards: game.whiteCards,
+            blackCards: game.blackCards,
+            boardPosition: game.boardPosition,
+            turnId: game.turnId,
+            gameTime: game.gameTime
+          })
+        return room;
+      }
+
+    } catch (err) {
+      return new WsException("join room failed");
     }
-    return room
   }
 
   @UseGuards(AuthGuard)
   @SubscribeMessage(SUB_LEAVE_ROOM)
   async cancelJoinRoom(@ConnectedSocket() client: Socket<ServerEvents>) {
-    const room = await this.playService.playerLeftRoom(client.id)
-    if (!room) return;
-    if (room.players.length > 0) {
-      client.to(room.id).emit("UPDATE_PLAYERS", room)
+    try {
+      const room = await this.playService.playerLeftRoom(client.id)
+      if (!room) throw new Error("no room to leave");
+      if (room.players.length > 0) {
+        client.to(room.id).emit("UPDATE_PLAYERS", room)
+      }
+      await client.leave(room.id)
+      return room
+    } catch (err) {
+      return new WsException("cannot leave room")
     }
-    await client.leave(room.id)
-    return room
   }
 
   @SubscribeMessage(SUB_MOVE)
@@ -292,7 +314,6 @@ export class PlayGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     )
   }
-
 
   @UseGuards(AuthGuard)
   @SubscribeMessage(SUB_REQUEST_REMATCH)
