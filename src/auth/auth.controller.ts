@@ -80,6 +80,7 @@ export class AuthController {
       return user
     } catch (e: unknown) {
       if (e instanceof IncorrectGoogleToken) throw new UnauthorizedException(e.message)
+      if (e instanceof UserAlreadyExistError) throw new ForbiddenException(e.message)
       throw new InternalServerErrorException("An unexpected error occurred")
     }
   }

@@ -47,8 +47,10 @@ export class AuthService {
 
   async signWithGoogle(token: string): Promise<UserSanitized> {
     const { email, sub: googleId } = await this.googleAuthService.verifyAccessToken(token)
-    const user = await this.userService.findOne({ googleId })
+    let user = await this.userService.findOne({ googleId })
     if (user) return user
+    user = await this.userService.findOne({ email })
+    if (user) throw new UserAlreadyExistError("The credentials you provided belong to a non-Google account. Please sign in with your username/email and password to access your account.")
     return await this.userService.create({ email, googleId, emailConfirmed: true })
   }
 
